@@ -9,11 +9,9 @@ def get_seq(fasta_path):
         for record in SeqIO.parse(fasta_file, "fasta"):
             return str(record.seq)
 
-def write_mismatches_arrays(clone_genome_path, bam_file, output_mismatch_path, output_coverage_path):
+def write_mismatches_arrays(clone_genome_path, bam_file, output_mismatch_path):
 
     clone_seq = get_seq(clone_genome_path)
-
-    coverage = np.zeros(len(clone_seq), dtype=int)
 
     with pysam.AlignmentFile(bam_file, "rb") as bam:
         with open(output_mismatch_path, 'w', newline='') as tsvfile:
@@ -38,10 +36,6 @@ def write_mismatches_arrays(clone_genome_path, bam_file, output_mismatch_path, o
                             else:
                                 ancestral_full_seq+=ancestral_seq[ancestral_pos].upper()
 
-                            #update coverage
-                            coverage[clone_pos]+=1
-                            #we consider also the gaps since they are considered as no-evidence in the subsequent steps
-                    
                     clone_seq_crop = clone_seq[mapping_start:mapping_end]
 
                     for i in range(len(clone_seq_crop)):
@@ -53,10 +47,6 @@ def write_mismatches_arrays(clone_genome_path, bam_file, output_mismatch_path, o
                     
                     np.set_printoptions(threshold=np.inf,linewidth=np.inf)
                     writer.writerow([ancestral.query_name, mapping_start, mapping_end, compressed_mismatches])
-            
-            #save coverage array
-            compressed_coverage = compress_array(coverage)
-            np.savez(output_coverage_path,compressed_coverage)
 
 if __name__ == "__main__":
 
@@ -69,13 +59,11 @@ if __name__ == "__main__":
     parser.add_argument("--bam", help="path of the bam file")
     parser.add_argument("--clone", help="path of the clone genome")
     parser.add_argument("--mismatch_out", help="output path of the .tsv file containing the evidence arrays")
-    parser.add_argument("--coverage_out", help="output path of the .npz file containing the coverage array")
 
     args = parser.parse_args()
     bam_file=args.bam
     
     clone_genome_path=args.clone
     output_mismatch_path=args.mismatch_out
-    output_coverage_path=args.coverage_out
 
-    write_mismatches_arrays(clone_genome_path, bam_file, output_mismatch_path, output_coverage_path)
+    write_mismatches_arrays(clone_genome_path, bam_file, output_mismatch_path)

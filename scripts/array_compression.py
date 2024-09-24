@@ -17,3 +17,11 @@ def decompress_array(compressed_array):
     for c, v in compressed_array:
         array += [int(v)] * c
     return array
+
+def retrive_compressed_array_from_str(array_str):
+    compressed_array = []
+    array_str_tuples = array_str[2:-2].split('), (')
+    for tuple_str in array_str_tuples:
+        x, y = tuple_str.split(', ')
+        compressed_array.append((int(x), int(y)))
+    return compressed_array

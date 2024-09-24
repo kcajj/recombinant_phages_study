@@ -4,7 +4,7 @@ import sys
 from Bio import SeqIO
 import matplotlib.pyplot as plt
 from collections import defaultdict
-from array_compression import decompress_array
+from array_compression import decompress_array, retrive_compressed_array_from_str
 
 def get_mismatch_arrays(mismatch_array_path):
     csv.field_size_limit(sys.maxsize)
@@ -21,12 +21,7 @@ def get_mismatch_arrays(mismatch_array_path):
             mapping_start=int(line[1])
             mapping_end=int(line[2])
 
-            mismatch_array_str_tuples=line[3][2:-2].split('), (')
-
-            compressed_mismatch_array = []
-            for tuple_str in mismatch_array_str_tuples:
-                x,y=tuple_str.split(', ')
-                compressed_mismatch_array.append((int(x),int(y)))
+            compressed_mismatch_array=retrive_compressed_array_from_str(line[3])
             mismatch_array=decompress_array(compressed_mismatch_array)
 
             ancestral_names.append(ancestral_name)
@@ -74,7 +69,7 @@ def plot_mappings(mismatch_array, coverage_array, population, isolate, k, out_fo
     plt.close(fig)
 '''
 
-def plot_mismatches(clone_genome_path, ancestral_names, mismatch_arrays, mapping_starts, mapping_ends, coverage_array, population, isolate, k, out_folder):
+def plot_mismatches(clone_genome_path, ancestral_names, mismatch_arrays, mapping_starts, mapping_ends, population, isolate, k, out_folder):
     fig=plt.figure(figsize=(18,6))
     
     len_seq = get_len_seq(clone_genome_path)
@@ -90,7 +85,7 @@ def plot_mismatches(clone_genome_path, ancestral_names, mismatch_arrays, mapping
                     if j>=mapping_starts[i] and j<=mapping_ends[i]:
                         array[j]+=mismatch_arrays[i][j-mapping_starts[i]]
         array = np.convolve(array, np.ones(k), 'valid') / k
-        plt.plot(array,label=name,alpha=0.5)
+        plt.plot(array,label=name,alpha=0.5,color=phage_colors[name])
     
     plt.legend()
     plt.title(f'Mutation density distribution of {isolate} {population}, with convolution window of {k}')
@@ -100,24 +95,21 @@ def plot_mismatches(clone_genome_path, ancestral_names, mismatch_arrays, mapping
 
 if __name__ == "__main__":
     
-    populations=['P1']
-    isolates=['C1']
+    populations=["P1","P2","P3"]
+    isolates=["C1","C2","C3","C4"]
     k=1000 #convolution window
 
     #set some estetic parameters for the plots
-    phage_colors={'EC2D2':'C2','EM11':'C0','EM60':'C1'}
-    mapping_colors={'primary':'g','supplementary':'b','secondary':'r'}
+    phage_colors={'EM11':'C0','EM60':'C1','EC2D2':'C2'}
 
     #plot the clone assemblies mutation density
     for population in populations:
         for isolate in isolates:
             
             clone_genome_path=f'data/clones_genomes/{population}/{population}_{isolate}.fasta'
-            mismatch_array_path = f'results/clones/mismatch_arrays/{population}/{population}_{isolate}.tsv'
-            coverage_array_path = f'results/clones/coverage_arrays/{population}/{population}_{isolate}.npz'
-            out_folder = f'results/clones/plots/{population}_{isolate}.png'
+            mismatch_array_path = f'results/mismatch_arrays/{population}/{population}_{isolate}.tsv'
+            out_folder = f'results/plots/mismatches/{population}_{isolate}.png'
 
             ancestral_names, mismatch_arrays, mapping_starts, mapping_ends = get_mismatch_arrays(mismatch_array_path)
-            coverage_array=decompress_array(npz_extract(coverage_array_path))
             
-            plot_mismatches(clone_genome_path, ancestral_names, mismatch_arrays, mapping_starts, mapping_ends, coverage_array, population, isolate, k, out_folder)
+            plot_mismatches(clone_genome_path, ancestral_names, mismatch_arrays, mapping_starts, mapping_ends, population, isolate, k, out_folder)
