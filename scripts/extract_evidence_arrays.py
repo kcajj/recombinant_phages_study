@@ -4,6 +4,7 @@ import pysam
 import time
 import csv
 from array_compression import compress_array
+import matplotlib.pyplot as plt
 
 def write_evidence_arrays(bam_file, refs_msa_path, output_evidences_path, output_coverage_path):
 
@@ -54,6 +55,29 @@ def write_evidence_arrays(bam_file, refs_msa_path, output_evidences_path, output
                     time_spent_per_read.append(end_time-start_time)
 
                     c_useful_alignments+=1
+                    '''
+                    plot_path = f"results/ev_plots/{read.query_name}_{int(time.time()*1000)}.png"
+
+                    hmm_plot, (evidences, prediction) = plt.subplots(2, 1, figsize=(10, 5))
+                    hmm_plot.suptitle(f'HMM read {c_tot_alignments}')
+
+                    colours = np.where(e_distribution_to_plot == 0, "green", np.where(e_distribution_to_plot == 1, "red", np.where(e_distribution_to_plot == 2, "blue", "orange")))
+                    evidences.scatter(range(mapping_start,len(e_distribution_to_plot)+mapping_start), e_distribution_to_plot, c=colours, marker='|', alpha=0.5)
+                    evidences.set_title(f'evidence distribution (0=same, 1=error, 2=evidence for)')
+                    evidences.set_xlabel("basepair")
+                    evidences.set_ylabel("visible states")
+                    hmm_prediction = np.zeros(len(e_distribution_to_plot))
+
+                    colours = np.where(hmm_prediction == 0, "blue", "orange")
+                    prediction.scatter(range(mapping_start,len(e_distribution_to_plot)+mapping_start), hmm_prediction, c=colours, marker='|', alpha=0.5)
+                    prediction.set_title(f'HMM prediction)')
+                    prediction.set_xlabel("basepair")
+                    prediction.set_ylabel("hidden states")
+
+                    hmm_plot.tight_layout()
+                    hmm_plot.savefig(plot_path)
+                    plt.close(hmm_plot)
+                    '''
 
                 c_tot_alignments+=1
             

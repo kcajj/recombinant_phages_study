@@ -17,3 +17,5 @@ We want to map on the clone genome the three references and see how the SNPs are
 2. Extract the SNPs from the alignment
 
 3. Plot the SNP density of each ancestral sequence on the clone
+
+4. summarise mismatches on a line:...

@@ -1,11 +1,12 @@
+configfile: "config.yml"
+
 clones = 'data/clones_genomes/{population}/{population}_{isolate}.fasta'
-all_ancestral_phages = 'data/all_references.fasta'
 ancestral_phages = 'data/references.fasta'
 
 rule map_ancestral_to_clones:
     input:
         clone = clones,
-        ancestral = all_ancestral_phages
+        ancestral = ancestral_phages
     output:
         sam = 'results/alignments/mismatches/{population}/{population}_{isolate}.sam',
         bam = 'results/alignments/mismatches/{population}/{population}_{isolate}.bam',
@@ -35,7 +36,21 @@ rule mismatch_arrays:
             --mismatch_out {output.mismatch}
         """
 
-configfile: "config.yml"
+rule plot_mismatch_density:
+    input:
+        clone = clones,
+        mismatch = rules.mismatch_arrays.output.mismatch
+    output:
+        plots='results/plots/mismatch_density/{population}_{isolate}.png',
+    conda:
+        'conda_envs/sci_py.yml'
+    shell:
+        """
+        python scripts/plot_mismatch_density.py \
+            --clone {input.clone} \
+            --mismatches {input.mismatch} \
+            --out {output.plots}
+        """
 
 rule msa:
     input:
@@ -77,7 +92,7 @@ rule mapping:
         'conda_envs/read_mapping.yml'
     shell:
         """
-        minimap2 -a -x map-ont {input.ref} {input.clone} > {output.sam}
+        minimap2 -a {input.ref} {input.clone} > {output.sam}
         samtools sort {output.sam} > {output.bam}
         samtools index {output.bam}
         """
@@ -102,7 +117,7 @@ rule evidence_arrays:
 
 rule prediction_arrays:
     input:
-        evidences=rules.evidence_arrays.output.evidences,
+        evidences = rules.evidence_arrays.output.evidences,
         msa = rules.msa.output.msa
     output:
         predictions='results/prediction_arrays/{population}/{population}_{isolate}.tsv'
@@ -147,10 +162,10 @@ rule genomewide_recombination_array:
 
 rule plot_references_coverage:
     input:
-        predictions=rules.prediction_arrays.output.predictions,
+        predictions = rules.prediction_arrays.output.predictions,
         msa = rules.msa.output.msa
     output:
-        plots='results/plots/{population}/references_coverage/{population}_{isolate}.png',
+        plots='results/plots/references_coverage/{population}_{isolate}.png',
     conda:
         'conda_envs/sci_py.yml'
     shell:
@@ -163,6 +178,6 @@ rule plot_references_coverage:
 
 rule all:
     input:
-        mismatch=expand(rules.mismatch_arrays.output.mismatch, population=["P1","P2","P3"], isolate=["C1","C2","C3","C4"]),
+        mismatch_plots=expand(rules.plot_mismatch_density.output.plots, population=["P1","P2","P3"], isolate=["C1","C2","C3","C4"]),
         coverage_plots=expand(rules.plot_references_coverage.output.plots, population=["P1","P2","P3"], isolate=["C1","C2","C3","C4"]),
         genomewide_recombination=expand(rules.genomewide_recombination_array.output.genomewide_recombination, population=["P1","P2","P3"], isolate=["C1","C2","C3","C4"])

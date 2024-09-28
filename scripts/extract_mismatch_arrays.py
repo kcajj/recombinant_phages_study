@@ -39,10 +39,10 @@ def write_mismatches_arrays(clone_genome_path, bam_file, output_mismatch_path):
                     clone_seq_crop = clone_seq[mapping_start:mapping_end]
 
                     for i in range(len(clone_seq_crop)):
-                        if ancestral_full_seq[i]!=clone_seq_crop[i]:
-                            mismatches[i]+=1
+                        if ancestral_full_seq[i]!='-' and clone_seq_crop[i]!='-':
+                            if ancestral_full_seq[i]!=clone_seq_crop[i]:
+                                mismatches[i]+=1
 
-                    #print(mismatches)
                     compressed_mismatches = compress_array(mismatches)
                     
                     np.set_printoptions(threshold=np.inf,linewidth=np.inf)

@@ -17,6 +17,7 @@ def get_mismatch_arrays(mismatch_array_path):
     with open(mismatch_array_path) as file:
         tsv_file = csv.reader(file, delimiter="\t")
         for line in tsv_file:
+            #extracting mismatch arrays and mapping info
             ancestral_name=line[0]
             mapping_start=int(line[1])
             mapping_end=int(line[2])
@@ -43,32 +44,6 @@ def get_len_seq(fasta_path):
         for record in SeqIO.parse(fasta_file, "fasta"):
             return int(len(record.seq))
 
-'''
-def plot_mappings(mismatch_array, coverage_array, population, isolate, k, out_folder):
-    
-    #plot the distribution of mismatches of a bam file
-    
-    number_of_plots=len(mismatch_distribution.keys())+1
-    fig, axs =plt.subplots(number_of_plots,sharex=True,constrained_layout = True, figsize=(8,10))
-
-    fig.suptitle(f'mutation density distribution between {population}-{isolate} and references, with convolution window of {k}')
-
-    for reference, distribution in mismatch_distribution.items():
-        distribution=np.convolve(distribution,np.ones(k),'valid')/k
-        l=len(distribution)
-        x=np.linspace(0,l,l)
-        axs[0].plot(x,distribution,color=phage_colors[reference])
-    axs[0].legend(mismatch_distribution.keys())
-    axs[0].set_title(reference)
-    axs[0].set_ylabel('mutation density')
-    axs[0].set_xlabel('bp')
-
-    #plot coverage
-        
-    fig.savefig(out_folder, bbox_inches='tight')
-    plt.close(fig)
-'''
-
 def plot_mismatches(clone_genome_path, ancestral_names, mismatch_arrays, mapping_starts, mapping_ends, population, isolate, k, out_folder):
     fig=plt.figure(figsize=(18,6))
     
@@ -77,6 +52,14 @@ def plot_mismatches(clone_genome_path, ancestral_names, mismatch_arrays, mapping
     lines=defaultdict(None)
     for i in range(len(ancestral_names)):
         lines[ancestral_names[i]]=np.zeros(len_seq)
+    
+    total_mismatches=np.zeros(len_seq)
+    for i in range(len(ancestral_names)):
+        for j in range(len(mismatch_arrays[i])):
+            if j>=mapping_starts[i] and j<=mapping_ends[i]:
+                total_mismatches[j]+=mismatch_arrays[i][j-mapping_starts[i]]
+
+    both_mismatches=np.zeros(len_seq)
 
     for name,array in lines.items():
         for i in range(len(ancestral_names)):
@@ -84,8 +67,19 @@ def plot_mismatches(clone_genome_path, ancestral_names, mismatch_arrays, mapping
                 for j in range(len(array)):
                     if j>=mapping_starts[i] and j<=mapping_ends[i]:
                         array[j]+=mismatch_arrays[i][j-mapping_starts[i]]
-        array = np.convolve(array, np.ones(k), 'valid') / k
-        plt.plot(array,label=name,alpha=0.5,color=phage_colors[name])
+        convolved_mismatch_array = np.convolve(array, np.ones(k), 'valid') / k
+        convolved_total_array = np.convolve(total_mismatches, np.ones(k), 'valid') / k
+        normalised_array=np.divide(convolved_mismatch_array, convolved_total_array, out=np.zeros_like(convolved_mismatch_array), where=convolved_total_array!=0)
+        
+        for i in range(len(normalised_array)):
+            if normalised_array[i]==1:
+                if name=="EM11":
+                    both_mismatches[i]=1
+                if name=="EM60":
+                    both_mismatches[i]=2
+    
+    x=np.arange(0,len(both_mismatches))
+    plt.scatter(x,both_mismatches,alpha=0.5)
     
     plt.legend()
     plt.title(f'Mutation density distribution of {isolate} {population}, with convolution window of {k}')
@@ -97,10 +91,10 @@ if __name__ == "__main__":
     
     populations=["P1","P2","P3"]
     isolates=["C1","C2","C3","C4"]
-    k=1000 #convolution window
+    k=500 #convolution window
 
     #set some estetic parameters for the plots
-    phage_colors={'EM11':'C0','EM60':'C1','EC2D2':'C2'}
+    phage_colors={'EM11':'C0','EM60':'C1'}
 
     #plot the clone assemblies mutation density
     for population in populations:
@@ -108,7 +102,7 @@ if __name__ == "__main__":
             
             clone_genome_path=f'data/clones_genomes/{population}/{population}_{isolate}.fasta'
             mismatch_array_path = f'results/mismatch_arrays/{population}/{population}_{isolate}.tsv'
-            out_folder = f'results/plots/mismatches/{population}_{isolate}.png'
+            out_folder = f'results/plots/mismatch_line/{population}_{isolate}.png'
 
             ancestral_names, mismatch_arrays, mapping_starts, mapping_ends = get_mismatch_arrays(mismatch_array_path)
             
