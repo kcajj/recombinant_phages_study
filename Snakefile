@@ -52,6 +52,22 @@ rule plot_mismatch_density:
             --out {output.plots}
         """
 
+rule plot_mismatch_line:
+    input:
+        clone = clones,
+        mismatch = rules.mismatch_arrays.output.mismatch
+    output:
+        plots='results/plots/mismatch_line/{population}_{isolate}.png',
+    conda:
+        'conda_envs/sci_py.yml'
+    shell:
+        """
+        python scripts/plot_mismatch_line.py \
+            --clone {input.clone} \
+            --mismatches {input.mismatch} \
+            --out {output.plots}
+        """
+
 rule msa:
     input:
         reference = ancestral_phages
@@ -140,32 +156,12 @@ rule prediction_arrays:
             --emission_p {params.emission_probability}
         """
 
-rule genomewide_recombination_array:
-    input:
-        predictions=rules.prediction_arrays.output.predictions,
-        msa = rules.msa.output.msa
-    output:
-        genomewide_recombination='results/genomewide_recombination/{population}/{population}_{isolate}.npz',
-        genomewide_recombination_01='results/genomewide_recombination/{population}/{population}_{isolate}_01.npz',
-        genomewide_recombination_10='results/genomewide_recombination/{population}/{population}_{isolate}_10.npz'
-    conda:
-        'conda_envs/sci_py.yml'
-    shell:
-        """
-        python scripts/genomewide_recombination.py \
-            --predictions {input.predictions} \
-            --msa_refs {input.msa} \
-            --out {output.genomewide_recombination} \
-            --out_01 {output.genomewide_recombination_01} \
-            --out_10 {output.genomewide_recombination_10}
-        """
-
 rule plot_references_coverage:
     input:
         predictions = rules.prediction_arrays.output.predictions,
         msa = rules.msa.output.msa
     output:
-        plots='results/plots/references_coverage/{population}_{isolate}.png',
+        plots='results/plots/references_coverage/{population}/{population}_{isolate}.png',
     conda:
         'conda_envs/sci_py.yml'
     shell:
@@ -178,6 +174,6 @@ rule plot_references_coverage:
 
 rule all:
     input:
-        mismatch_plots=expand(rules.plot_mismatch_density.output.plots, population=["P1","P2","P3"], isolate=["C1","C2","C3","C4"]),
+        mismatch_density_plots=expand(rules.plot_mismatch_density.output.plots, population=["P1","P2","P3"], isolate=["C1","C2","C3","C4"]),
+        mismatch_line_plots=expand(rules.plot_mismatch_line.output.plots, population=["P1","P2","P3"], isolate=["C1","C2","C3","C4"]),
         coverage_plots=expand(rules.plot_references_coverage.output.plots, population=["P1","P2","P3"], isolate=["C1","C2","C3","C4"]),
-        genomewide_recombination=expand(rules.genomewide_recombination_array.output.genomewide_recombination, population=["P1","P2","P3"], isolate=["C1","C2","C3","C4"])
