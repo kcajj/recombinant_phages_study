@@ -44,11 +44,16 @@ rule plot_mismatch_density:
         plots='results/plots/mismatch_density/{population}_{isolate}.png',
     conda:
         'conda_envs/sci_py.yml'
+    params:
+        x_axis = config["common_x_axis"],
+        k = config["convolution_window"]
     shell:
         """
         python scripts/plot_mismatch_density.py \
             --clone {input.clone} \
             --mismatches {input.mismatch} \
+            --x_axis {params.x_axis} \
+            --k {params.k} \
             --out {output.plots}
         """
 
@@ -60,11 +65,16 @@ rule plot_mismatch_line:
         plots='results/plots/mismatch_line/{population}_{isolate}.png',
     conda:
         'conda_envs/sci_py.yml'
+    params:
+        x_axis = config["common_x_axis"],
+        k = config["convolution_window"]
     shell:
         """
         python scripts/plot_mismatch_line.py \
             --clone {input.clone} \
             --mismatches {input.mismatch} \
+            --x_axis {params.x_axis} \
+            --k {params.k} \
             --out {output.plots}
         """
 

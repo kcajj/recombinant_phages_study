@@ -46,7 +46,7 @@ def get_len_seq(fasta_path):
         for record in SeqIO.parse(fasta_file, "fasta"):
             return int(len(record.seq))
 
-def plot_mismatches(clone_genome_path, ancestral_names, mismatch_arrays, mapping_starts, mapping_ends, population, isolate, k, out_folder):
+def plot_mismatches(clone_genome_path, ancestral_names, mismatch_arrays, mapping_starts, mapping_ends, population, isolate, k, x_axis, out_folder):
     fig=plt.figure(figsize=(18,6))
     
     len_seq = get_len_seq(clone_genome_path)
@@ -116,6 +116,7 @@ def plot_mismatches(clone_genome_path, ancestral_names, mismatch_arrays, mapping
         c+=1
 
     plt.legend(handles=legend_elements)
+    plt.xlim(0,x_axis)
     fig.savefig(out_folder, bbox_inches='tight')
     plt.close(fig)
 
@@ -129,17 +130,19 @@ if __name__ == "__main__":
     )
     parser.add_argument("--clone", help="path of the clone genome")
     parser.add_argument("--mismatches", help="path of the mismatch array")
+    parser.add_argument("--x_axis", help="length of the x axis")
+    parser.add_argument("--k", help="convolution window")
     parser.add_argument("--out", help="output path of the plot")
 
     args = parser.parse_args()
     clone_genome_path=args.clone
     mismatch_array_path=args.mismatches
+    x_axis=int(args.x_axis)
+    k=int(args.k)
     output_path=args.out
 
-    k=500 #convolution window
-
     #set some estetic parameters for the plots
-    phage_colors={'EM11':'C0','EM60':'C1','EC2D2':'C2'}
+    phage_colors={'EM11':'C0','EM60':'C1'}
 
     population=mismatch_array_path.split("/")[-1].split(".")[0].split("_")[0]
     isolate=mismatch_array_path.split("/")[-1].split(".")[0].split("_")[1]
@@ -147,4 +150,4 @@ if __name__ == "__main__":
     
     ancestral_names, mismatch_arrays, mapping_starts, mapping_ends = get_mismatch_arrays(mismatch_array_path)
     
-    plot_mismatches(clone_genome_path, ancestral_names, mismatch_arrays, mapping_starts, mapping_ends, population, isolate, k, output_path)
+    plot_mismatches(clone_genome_path, ancestral_names, mismatch_arrays, mapping_starts, mapping_ends, population, isolate, k, x_axis, output_path)

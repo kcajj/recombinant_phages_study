@@ -19,3 +19,7 @@ emission_probability:
     0: "0.967"
     1: "0.003"
     2: "0.03"
+
+convolution_window: 500
+
+common_x_axis: 141194
