@@ -38,4 +38,9 @@ We want to map on the clone genome the three references and see how the SNPs are
 
     c. keeping values 1
 
-    d. result
+    d. inverting colors
+
+todo:
+get longest between clones and refs
+put hmm cuts
+all clones plot

@@ -101,6 +101,13 @@ def plot_mismatches(clone_genome_path, ancestral_names, mismatch_arrays, mapping
         x = c
         width = lenn
         c += lenn
+
+        #invert colors
+        if typee==1:
+            typee=2
+        elif typee==2:
+            typee=1
+
         rectangle = mpatches.Rectangle((x, y), width, height, color=colors['C'+str(typee)])
         ax.add_patch(rectangle)
         
