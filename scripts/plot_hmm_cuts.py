@@ -4,9 +4,9 @@ import sys
 from Bio import SeqIO
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from matplotlib.lines import Line2D
 from collections import defaultdict
 from array_compression import decompress_array, retrive_compressed_array_from_str, compress_array
+from coordinate_converter import get_hyb_ref_map
 
 def get_mismatch_arrays(mismatch_array_path):
     csv.field_size_limit(sys.maxsize)
@@ -46,7 +46,7 @@ def get_len_seq(fasta_path):
         for record in SeqIO.parse(fasta_file, "fasta"):
             return int(len(record.seq))
 
-def plot_mismatch_line(clone_genome_path, ancestral_names, mismatch_arrays, mapping_starts, mapping_ends, population, isolate, k, x_axis, out_folder):
+def plot_hmm_cuts(clone_genome_path, ancestral_names, mismatch_arrays, mapping_starts, mapping_ends, recombination_distribution, population, isolate, k, x_axis, out_folder):
     fig=plt.figure(figsize=(18,6))
     
     len_seq = get_len_seq(clone_genome_path)
@@ -82,9 +82,6 @@ def plot_mismatch_line(clone_genome_path, ancestral_names, mismatch_arrays, mapp
                     if normalised_array[j]==1:
                         both_mismatches[j]=c
     
-    fig, ax = plt.subplots(nrows=1, figsize=(18,6))
-    plotting_array = compress_array(both_mismatches)
-
     #create a colour array with 0=gray and from 1 onwards C0, C1, C2, C3 ecc
     colors={'C0':'gray'}
     c=0
@@ -92,6 +89,9 @@ def plot_mismatch_line(clone_genome_path, ancestral_names, mismatch_arrays, mapp
         colors['C'+str(c+1)]='C'+str(c)
         c+=1
         #cycling through the lines in the same order as we did in the previous loop, to guarantee correct colours (if a line is first it gets c0)
+
+    fig, ax = plt.subplots(nrows=1, figsize=(18,6))
+    plotting_array = compress_array(both_mismatches)
 
     #plot the rectangles
     height=1
@@ -110,9 +110,17 @@ def plot_mismatch_line(clone_genome_path, ancestral_names, mismatch_arrays, mapp
 
         rectangle = mpatches.Rectangle((x, y), width, height, color=colors['C'+str(typee)])
         ax.add_patch(rectangle)
-        
-    #todo: legend
     ax.set(xlim=(0, len(both_mismatches)), ylim=(-5, 5))
+
+    #change coordinates
+    converted_recombination=np.zeros_like(recombination_distribution)
+    for hybrid_coord in range(len(recombination_distribution)):
+        clone_coord=coordinate_conversion_map[hybrid_coord]
+        if clone_coord==None: continue
+        converted_recombination[clone_coord]=recombination_distribution[hybrid_coord]
+    cuts = [i for i, value in enumerate(converted_recombination) if value == 1]
+    ax.scatter(cuts, [0] * len(cuts), color='red', marker='|', s=100)
+
     fig.suptitle(f'Mutation density distribution of {isolate} {population}, with convolution window of {k}')
     ax.set_xlabel('bp')
 
@@ -137,6 +145,8 @@ if __name__ == "__main__":
     )
     parser.add_argument("--clone", help="path of the clone genome")
     parser.add_argument("--mismatches", help="path of the mismatch array")
+    parser.add_argument("--recombination", help="path of the .npz recombination array")
+    parser.add_argument("--hc_alignment", help="path of the hybrid-clone alignment")
     parser.add_argument("--x_axis", help="length of the x axis")
     parser.add_argument("--k", help="convolution window")
     parser.add_argument("--out", help="output path of the plot")
@@ -144,6 +154,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     clone_genome_path=args.clone
     mismatch_array_path=args.mismatches
+    recombination_distribution_path=args.recombination
+    hybrid_clone_alignment=args.hc_alignment
     x_axis=int(args.x_axis)
     k=int(args.k)
     output_path=args.out
@@ -156,5 +168,9 @@ if __name__ == "__main__":
     #plot the clone assemblies mutation density
     
     ancestral_names, mismatch_arrays, mapping_starts, mapping_ends = get_mismatch_arrays(mismatch_array_path)
+
+    recombination_distribution = npz_extract(recombination_distribution_path)
+
+    coordinate_conversion_map=get_hyb_ref_map(hybrid_clone_alignment)
     
-    plot_mismatch_line(clone_genome_path, ancestral_names, mismatch_arrays, mapping_starts, mapping_ends, population, isolate, k, x_axis, output_path)
+    plot_hmm_cuts(clone_genome_path, ancestral_names, mismatch_arrays, mapping_starts, mapping_ends, recombination_distribution, population, isolate, k, x_axis, output_path)

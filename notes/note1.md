@@ -42,5 +42,7 @@ We want to map on the clone genome the three references and see how the SNPs are
 
 todo:
 get longest between clones and refs
-put hmm cuts
+put hmm cuts: it would need a change of coordinates
 all clones plot
+
+reparameterization/parameterization system
