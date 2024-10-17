@@ -40,9 +40,10 @@ We want to map on the clone genome the three references and see how the SNPs are
 
     d. inverting colors
 
+5. adding hmm cuts (needs the coordinate conversion between hybrid reference and clones)
+
 todo:
 get longest between clones and refs
-put hmm cuts: it would need a change of coordinates
 all clones plot
 
 reparameterization/parameterization system

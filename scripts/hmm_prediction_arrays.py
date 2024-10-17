@@ -5,47 +5,50 @@ import csv
 import sys
 from multiprocessing import Pool
 from itertools import repeat
-from array_compression import compress_array,decompress_array,retrive_compressed_array_from_str
+from array_compression import compress_array, decompress_array, retrive_compressed_array_from_str
+
 
 def build_matrix(input):
-    matrix=[]
-    rows=input.split("/")
+    matrix = []
+    rows = input.split("/")
     for i in rows:
-        row=i.split(",")
-        float_row=[float(r) for r in row]
+        row = i.split(",")
+        float_row = [float(r) for r in row]
         matrix.append(float_row)
     return np.array(matrix)
+
 
 def get_evidence_arrays(evidences_file):
     csv.field_size_limit(sys.maxsize)
 
-    ancestral_names=[]
-    evidence_arrays=[]
-    mapping_starts=[]
-    mapping_ends=[]
+    ancestral_names = []
+    evidence_arrays = []
+    mapping_starts = []
+    mapping_ends = []
 
-    c_reads=0
+    c_reads = 0
     with open(evidences_file) as file:
         tsv_file = csv.reader(file, delimiter="\t")
         for line in tsv_file:
-            ancestral_name=line[0]
-            mapping_start=int(line[1])
-            mapping_end=int(line[2])
+            ancestral_name = line[0]
+            mapping_start = int(line[1])
+            mapping_end = int(line[2])
 
-            compressed_evidence_array=retrive_compressed_array_from_str(line[3])
-            evidence_array=decompress_array(compressed_evidence_array)
+            compressed_evidence_array = retrive_compressed_array_from_str(line[3])
+            evidence_array = decompress_array(compressed_evidence_array)
 
             ancestral_names.append(ancestral_name)
             evidence_arrays.append(evidence_array)
             mapping_starts.append(mapping_start)
             mapping_ends.append(mapping_end)
-            c_reads+=1
+            c_reads += 1
 
-    return ancestral_names, evidence_arrays, mapping_starts, mapping_ends,c_reads
+    return ancestral_names, evidence_arrays, mapping_starts, mapping_ends, c_reads
+
 
 def write_prediction_arrays(output_path, results, read_names, mapping_starts, mapping_ends):
-    with open(output_path, 'w', newline='') as tsvfile:
-        writer = csv.writer(tsvfile, delimiter='\t', lineterminator='\n')
+    with open(output_path, "w", newline="") as tsvfile:
+        writer = csv.writer(tsvfile, delimiter="\t", lineterminator="\n")
         for i in range(len(results)):
             hmm_prediction = results[i][0]
             log_lik = results[i][1]
@@ -55,8 +58,9 @@ def write_prediction_arrays(output_path, results, read_names, mapping_starts, ma
 
             compressed_hmm_prediction = compress_array(hmm_prediction)
 
-            np.set_printoptions(threshold=np.inf,linewidth=np.inf)
+            np.set_printoptions(threshold=np.inf, linewidth=np.inf)
             writer.writerow([read_name, mapping_start, mapping_end, log_lik, compressed_hmm_prediction])
+
 
 if __name__ == "__main__":
 
@@ -75,32 +79,40 @@ if __name__ == "__main__":
     parser.add_argument("--emission_p", help="emission probabilities of the HMM states")
 
     args = parser.parse_args()
-    evidences_file=args.evidences
-    refs_msa_path=args.msa_refs
-    output_path=args.out
-    cores=args.cores
-    initial_probability=args.initial_p
-    transition_probability=args.transition_p
-    emission_probability=args.emission_p
+    evidences_file = args.evidences
+    refs_msa_path = args.msa_refs
+    output_path = args.out
+    cores = args.cores
+    initial_probability = args.initial_p
+    transition_probability = args.transition_p
+    emission_probability = args.emission_p
 
-    tot_t_start=time.time()
+    tot_t_start = time.time()
 
-    initial_probability_matrix=build_matrix(initial_probability)
-    transition_probability_matrix=build_matrix(transition_probability)
-    emission_probability_matrix=build_matrix(emission_probability)
+    initial_probability_matrix = build_matrix(initial_probability)
+    transition_probability_matrix = build_matrix(transition_probability)
+    emission_probability_matrix = build_matrix(emission_probability)
 
     read_names, evidence_arrays, mapping_starts, mapping_ends, c_reads = get_evidence_arrays(evidences_file)
 
     with Pool(cores) as p:
-        results = p.starmap(viterbi_algorithm, zip(evidence_arrays, repeat(transition_probability_matrix), repeat(emission_probability_matrix), repeat(initial_probability_matrix)))
+        results = p.starmap(
+            viterbi_algorithm,
+            zip(
+                evidence_arrays,
+                repeat(transition_probability_matrix),
+                repeat(emission_probability_matrix),
+                repeat(initial_probability_matrix),
+            ),
+        )
 
     write_prediction_arrays(output_path, results, read_names, mapping_starts, mapping_ends)
-    
-    tot_t=time.time()-tot_t_start
 
-    output_stats_path=output_path[:-4]+"_stats.txt"
-    with open(output_stats_path, 'w') as f:
-        f.write("prediction arrays run of "+evidences_file+'\n')
-        f.write("total time "+str(tot_t)+'\n')
-        f.write("total reads "+str(c_reads)+'\n')
-        f.write("time per read "+str(tot_t/c_reads)+'\n')
+    tot_t = time.time() - tot_t_start
+
+    output_stats_path = output_path[:-4] + "_stats.txt"
+    with open(output_stats_path, "w") as f:
+        f.write("prediction arrays run of " + evidences_file + "\n")
+        f.write("total time " + str(tot_t) + "\n")
+        f.write("total reads " + str(c_reads) + "\n")
+        f.write("time per read " + str(tot_t / c_reads) + "\n")

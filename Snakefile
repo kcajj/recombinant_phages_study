@@ -41,7 +41,7 @@ rule plot_mismatch_density:
         clone = clones,
         mismatch = rules.mismatch_arrays.output.mismatch
     output:
-        plots='results/plots/mismatch_density/{population}_{isolate}.png',
+        plots='results/plots/mismatch_density/{population}_{isolate}.pdf',
     conda:
         'conda_envs/sci_py.yml'
     params:
@@ -62,7 +62,7 @@ rule plot_mismatch_line:
         clone = clones,
         mismatch = rules.mismatch_arrays.output.mismatch
     output:
-        plots='results/plots/mismatch_line/{population}_{isolate}.png',
+        plots='results/plots/mismatch_line/{population}_{isolate}.pdf',
     conda:
         'conda_envs/sci_py.yml'
     params:
@@ -208,7 +208,7 @@ rule plot_references_coverage:
         predictions = rules.prediction_arrays.output.predictions,
         msa = rules.msa.output.msa
     output:
-        plots='results/plots/references_coverage/{population}/{population}_{isolate}.png',
+        plots='results/plots/references_coverage/{population}/{population}_{isolate}.pdf',
     conda:
         'conda_envs/sci_py.yml'
     shell:
@@ -226,7 +226,7 @@ rule plot_hmm_cuts:
         recombination = rules.genomewide_recombination_array.output.genomewide_recombination,
         hc_alignment = rules.map_hybridref_to_clones.output.bam
     output:
-        plots='results/plots/hmm_cuts/{population}_{isolate}.png',
+        plots='results/plots/hmm_cuts/{population}_{isolate}.pdf',
     conda:
         'conda_envs/sci_py.yml'
     params:
