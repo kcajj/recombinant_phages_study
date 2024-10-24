@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 from array_compression import decompress_array, retrive_compressed_array_from_str
 
+from hmm_prediction_arrays import get_evidence_arrays
+
 
 def get_references_coverage(predictions_file, refs_msa_path):
 
@@ -36,14 +38,30 @@ def get_references_coverage(predictions_file, refs_msa_path):
     return coverage, coverage0, coverage1
 
 
-def plot_references_coverage(array1, array2, output_path, title, x_label, y_label, refs_msa_path):
+def plot_references_coverage(array1, array2, output_path, title, x_label, y_label, refs_msa_path, population):
+    evidences_file = f"results/evidence_arrays/{population}/{id}.tsv"
+    read_names, evidence_arrays, mapping_starts, mapping_ends, c_reads = get_evidence_arrays(evidences_file)
+    evidences_to_plot = []
+    x = []
+    for i in range(len(read_names)):
+        if read_names[i] == "P1_C1":
+            for pos, val in enumerate(evidence_arrays[i]):
+                if val != 0:
+                    x.append(pos + mapping_starts[i])
+                if val == 1:
+                    evidences_to_plot.append("blue")
+                elif val == 2:
+                    evidences_to_plot.append("orange")
+    y = [1] * len(x)
+
     plt.figure(figsize=(20, 5))
+    plt.scatter(x, y, marker="|", c=evidences_to_plot, alpha=0.3)
     plt.plot(array1, alpha=0.5)
     plt.plot(array2, alpha=0.5)
     plt.title(title)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
-    plt.legend(extract_references_names(refs_msa_path))
+    plt.legend(["evidences"]+extract_references_names(refs_msa_path))
     plt.savefig(output_path)
 
     html_path = output_path[:-3] + "html"
@@ -72,9 +90,17 @@ if __name__ == "__main__":
     coverage, coverage0, coverage1 = get_references_coverage(predictions_file, refs_msa_path)
 
     id = output_path.split("/")[-1].split(".")[0]
+    population = output_path.split("/")[-1].split(".")[0].split("_")[0]
 
     plot_references_coverage(
-        coverage0, coverage1, output_path, f"References coverage {id}", "position", "coverage", refs_msa_path
+        coverage0,
+        coverage1,
+        output_path,
+        f"References coverage {id}",
+        "position",
+        "coverage",
+        refs_msa_path,
+        population,
     )
 
     normalised0 = np.divide(
@@ -90,7 +116,7 @@ if __name__ == "__main__":
         where=coverage.astype(float) != 0,
     )
 
-    normalised_output_path = output_path[:-4] + "_normalised.png"
+    normalised_output_path = output_path[:-4] + "_normalised.pdf"
 
     plot_references_coverage(
         normalised0,
@@ -100,4 +126,5 @@ if __name__ == "__main__":
         "position",
         "coverage rate",
         refs_msa_path,
+        population,
     )

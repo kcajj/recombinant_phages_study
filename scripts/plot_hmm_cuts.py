@@ -56,6 +56,7 @@ def plot_hmm_cuts(
     mismatch_arrays,
     mapping_starts,
     mapping_ends,
+    hybrid_clone_alignment,
     recombination_distribution,
     population,
     isolate,
@@ -63,7 +64,6 @@ def plot_hmm_cuts(
     x_axis,
     out_folder,
 ):
-    fig = plt.figure(figsize=(18, 6))
 
     len_seq = get_len_seq(clone_genome_path)
 
@@ -134,7 +134,8 @@ def plot_hmm_cuts(
     ax.set(xlim=(0, len(both_mismatches)), ylim=(-5, 5))
 
     # change coordinates
-    converted_recombination = np.zeros_like(recombination_distribution)
+    coordinate_conversion_map = get_hyb_ref_map(hybrid_clone_alignment)
+    converted_recombination = np.zeros(len_seq)
     for hybrid_coord in range(len(recombination_distribution)):
         clone_coord = coordinate_conversion_map[hybrid_coord]
         if clone_coord == None:
@@ -194,14 +195,13 @@ if __name__ == "__main__":
 
     recombination_distribution = npz_extract(recombination_distribution_path)
 
-    coordinate_conversion_map = get_hyb_ref_map(hybrid_clone_alignment)
-
     plot_hmm_cuts(
         clone_genome_path,
         ancestral_names,
         mismatch_arrays,
         mapping_starts,
         mapping_ends,
+        hybrid_clone_alignment,
         recombination_distribution,
         population,
         isolate,

@@ -8,6 +8,10 @@ from array_compression import decompress_array, retrive_compressed_array_from_st
 
 
 def get_mismatch_arrays(mismatch_array_path):
+    '''
+    extract the mismatch distribution from the .tsv file produced by extract_mismatch_arrays.py
+    in each file we have several arrays with the information of where the ancestral sequence is mapping on the clone and what is its mismatch distribution
+    '''
     csv.field_size_limit(sys.maxsize)
 
     ancestral_names = []
@@ -47,8 +51,17 @@ def get_len_seq(fasta_path):
         for record in SeqIO.parse(fasta_file, "fasta"):
             return int(len(record.seq))
 
+def fill(array, start, end, mismatch_array):
+    '''
+    fill the array with the mismatch information starting from index "start"
+    '''
+    for i in range(len(array)):
+        if i >= start and i <= end:
+            array[i] += mismatch_array[i - start]
+    #return array[:start]+mismatch_array+array[start+len(mismatch_array):]
+    return array
 
-def plot_mismatches(
+def plot_mismatch_rectangles(
     clone_genome_path,
     ancestral_names,
     mismatch_arrays,
@@ -60,20 +73,25 @@ def plot_mismatches(
     x_axis,
     out_folder,
 ):
+    '''
+    creates a plot with the mismatch density of all the ancestral sequences mapped on the clone
+    '''
     fig = plt.figure(figsize=(18, 6))
 
     len_seq = get_len_seq(clone_genome_path)
 
+    # create a dictionary with the ancestral names as keys (just one for each ancestral sequence) and the empy mismatch arrays as values, 
     lines = defaultdict(None)
     for i in range(len(ancestral_names)):
         lines[ancestral_names[i]] = np.zeros(len_seq)
 
+    # fill the array of lines dictionary (basically we are summarizing all the arrays contained in the mismatch_arrays list belonging to the same ancestral sequence)
     for name, array in lines.items():
-        for i in range(len(ancestral_names)):
-            if ancestral_names[i] == name:
-                for j in range(len(array)):
-                    if j >= mapping_starts[i] and j <= mapping_ends[i]:
-                        array[j] += mismatch_arrays[i][j - mapping_starts[i]]
+        for i in range(len(ancestral_names)): #loop in the data arrays by get_mismatch_arrays, we want to get all the arrays of the same ancestral sequence
+            if ancestral_names[i] == name: # i is the index of an alignment of the correct ancestral sequence
+                array=fill(array, mapping_starts[i], mapping_ends[i], mismatch_arrays[i])
+        
+        #once we have all the arrays of the same ancestral sequence we can plot them
         convolved_mismatch_array = np.convolve(array, np.ones(k), "valid") / k
         plt.plot(convolved_mismatch_array, label=name, alpha=0.5, color=phage_colors[name])
 
@@ -114,7 +132,7 @@ if __name__ == "__main__":
 
     ancestral_names, mismatch_arrays, mapping_starts, mapping_ends = get_mismatch_arrays(mismatch_array_path)
 
-    plot_mismatches(
+    plot_mismatch_rectangles(
         clone_genome_path,
         ancestral_names,
         mismatch_arrays,

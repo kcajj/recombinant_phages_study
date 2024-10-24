@@ -43,7 +43,12 @@ We want to map on the clone genome the three references and see how the SNPs are
 5. adding hmm cuts (needs the coordinate conversion between hybrid reference and clones)
 
 todo:
+
+clones:
 get longest between clones and refs
-all clones plot
+all clones plot (expressed in hyb ref coordinates)
+optimize recombination parameter
 
 reparameterization/parameterization system
+combination of two population plots
+optimize recombination parameter

@@ -1,3 +1,12 @@
+populations=["P1","P2","P3"]
+isolates=["C1","C2","C3","C4"]
+populations_string = ""
+for population in populations:
+    populations_string += population + ","
+isolates_string = ""
+for isolate in isolates:
+    isolates_string += isolate + ","
+
 configfile: "config.yml"
 
 clones = 'data/clones_genomes/{population}/{population}_{isolate}.fasta'
@@ -186,6 +195,22 @@ rule genomewide_recombination_array:
             --out_10 {output.genomewide_recombination_10}
         """
 
+rule plot_references_coverage:
+    input:
+        predictions = rules.prediction_arrays.output.predictions,
+        msa = rules.msa.output.msa
+    output:
+        plots='results/plots/references_coverage/{population}/{population}_{isolate}.pdf',
+    conda:
+        'conda_envs/sci_py.yml'
+    shell:
+        """
+        python scripts/plot_references_coverage.py \
+            --predictions {input.predictions} \
+            --msa_refs {input.msa} \
+            --out {output.plots}
+        """
+
 rule map_hybridref_to_clones:
     input:
         clone = clones,
@@ -203,22 +228,7 @@ rule map_hybridref_to_clones:
         samtools index {output.bam}
         """
 
-rule plot_references_coverage:
-    input:
-        predictions = rules.prediction_arrays.output.predictions,
-        msa = rules.msa.output.msa
-    output:
-        plots='results/plots/references_coverage/{population}/{population}_{isolate}.pdf',
-    conda:
-        'conda_envs/sci_py.yml'
-    shell:
-        """
-        python scripts/plot_references_coverage.py \
-            --predictions {input.predictions} \
-            --msa_refs {input.msa} \
-            --out {output.plots}
-        """
-
+#doesn't work, coordinates convertion creates problems
 rule plot_hmm_cuts:
     input:
         clone = clones,
@@ -244,9 +254,49 @@ rule plot_hmm_cuts:
             --out {output.plots}
         """
 
+rule plot_multiple_clones:
+    input:
+        hybrid_ref = rules.hybrid_ref.output.hybrid_ref
+    output:
+        plot='results/plots/multiple_clones_plot.pdf',
+    conda:
+        'conda_envs/sci_py.yml'
+    params:
+        populations = populations_string,
+        clones = isolates_string,
+        x_axis = config["common_x_axis"],
+        k = config["convolution_window"]
+    shell:
+        """
+        python scripts/plot_multiple_clones.py \
+            --populations {params.populations} \
+            --clones {params.clones} \
+            --hybrid_ref {input.hybrid_ref} \
+            --k {params.k} \
+            --out {output.plot}
+        """
+
+rule clones_processing:
+    input:
+        mismatch_density_plots=expand(rules.plot_mismatch_density.output.plots, population=populations, isolate=isolates),
+        mismatch_line_plots=expand(rules.plot_mismatch_line.output.plots, population=populations, isolate=isolates),
+        coverage_plots=expand(rules.plot_references_coverage.output.plots, population=populations, isolate=isolates),
+        hmm_cuts=expand(rules.plot_hmm_cuts.output.plots, population=populations, isolate=isolates)
+    output:
+        finish = 'results/all_clones_processed.txt'
+    shell:
+        """
+        touch {output.finish}
+        """
+
 rule all:
     input:
-        mismatch_density_plots=expand(rules.plot_mismatch_density.output.plots, population=["P1","P2","P3"], isolate=["C1","C2","C3","C4"]),
-        mismatch_line_plots=expand(rules.plot_mismatch_line.output.plots, population=["P1","P2","P3"], isolate=["C1","C2","C3","C4"]),
-        coverage_plots=expand(rules.plot_references_coverage.output.plots, population=["P1","P2","P3"], isolate=["C1","C2","C3","C4"]),
-        hmm_cuts=expand(rules.plot_hmm_cuts.output.plots, population=["P1","P2","P3"], isolate=["C1","C2","C3","C4"])
+        finish = rules.clones_processing.output.finish,
+        plot = rules.plot_multiple_clones.output.plot
+    output:
+        finish = 'results/plot_multiple_clones_completed.txt'
+    shell:
+        """
+        rm {input.finish}
+        touch {output.finish}
+        """
