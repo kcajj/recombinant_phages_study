@@ -281,7 +281,6 @@ rule clones_processing:
         mismatch_density_plots=expand(rules.plot_mismatch_density.output.plots, population=populations, isolate=isolates),
         mismatch_line_plots=expand(rules.plot_mismatch_line.output.plots, population=populations, isolate=isolates),
         coverage_plots=expand(rules.plot_references_coverage.output.plots, population=populations, isolate=isolates),
-        hmm_cuts=expand(rules.plot_hmm_cuts.output.plots, population=populations, isolate=isolates)
     output:
         finish = 'results/all_clones_processed.txt'
     shell:
@@ -293,10 +292,7 @@ rule all:
     input:
         finish = rules.clones_processing.output.finish,
         plot = rules.plot_multiple_clones.output.plot
-    output:
-        finish = 'results/plot_multiple_clones_completed.txt'
     shell:
         """
         rm {input.finish}
-        touch {output.finish}
         """
