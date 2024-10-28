@@ -48,7 +48,6 @@ def summarise_ancestral_alignments(
     ancestral_alignments,
     ancestral_starts,
     ancestral_ends,
-    k,
 ):
     """
     create an array that summarises the mapping of ancestral on hybrid
@@ -64,9 +63,7 @@ def summarise_ancestral_alignments(
         for i in range(len(ancestral_names)):
             if ancestral_names[i] == name:
                 array = fill(array, ancestral_starts[i], ancestral_ends[i], ancestral_alignments[i])
-        # convolution and normalisation
-        #convolved_array = np.convolve(array, np.ones(k), "valid") / k
-
+ 
         distributions[name] = array  # the distributions dictionary stores the normalised arrays
 
     return distributions
@@ -85,7 +82,7 @@ def plot_ancestral_line(
 
     # plot the rectangles
     height = thickness
-    y = offset-interline-thickness+1
+    y = offset-interline-thickness
     c = 0
     for lenn, typee in plotting_array:
         
@@ -219,7 +216,7 @@ def plot_mismatch_line(
 
     # plot the rectangles
     height = thickness
-    y = offset-interline-thickness+1
+    y = offset-interline-thickness
     c = 0
     for lenn, typee in plotting_array:
         
@@ -285,12 +282,12 @@ if __name__ == "__main__":
         ancestral_alignments,
         ancestral_starts,
         ancestral_ends,
-        k,)
+        )
     
     n_plots = len(populations) * len(clones) + len(ancestral_arrays.keys())
     fig,ax = plt.subplots(figsize=(20, 10))
 
-    interline = 2
+    interline = 1
     thickness = 1
 
     offset = n_plots+(n_plots*(interline+thickness-1))
