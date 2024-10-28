@@ -254,6 +254,18 @@ rule plot_hmm_cuts:
             --out {output.plots}
         """
 
+rule clones_processing:
+    input:
+        mismatch_density_plots=expand(rules.plot_mismatch_density.output.plots, population=populations, isolate=isolates),
+        mismatch_line_plots=expand(rules.plot_mismatch_line.output.plots, population=populations, isolate=isolates),
+        coverage_plots=expand(rules.plot_references_coverage.output.plots, population=populations, isolate=isolates),
+    output:
+        finish = 'results/all_clones_processed.txt'
+    shell:
+        """
+        touch {output.finish}
+        """
+
 rule plot_multiple_clones:
     input:
         hybrid_ref = rules.hybrid_ref.output.hybrid_ref
@@ -276,22 +288,41 @@ rule plot_multiple_clones:
             --out {output.plot}
         """
 
-rule clones_processing:
+rule optimize_recombination_parameter:
     input:
-        mismatch_density_plots=expand(rules.plot_mismatch_density.output.plots, population=populations, isolate=isolates),
-        mismatch_line_plots=expand(rules.plot_mismatch_line.output.plots, population=populations, isolate=isolates),
-        coverage_plots=expand(rules.plot_references_coverage.output.plots, population=populations, isolate=isolates),
+        msa = rules.msa.output.msa
     output:
-        finish = 'results/all_clones_processed.txt'
+        plot = 'results/plots/parameter_optimization.pdf'
+    conda:
+        'conda_envs/sci_py.yml'
+    params:
+        populations = populations_string,
+        clones = isolates_string,
+        cores = config["cores"],
+        initial_probability = config["initial_probability"]["A"]+","+config["initial_probability"]["B"],
+        transition_probability = config["optimization_recombination_parameter"]["values"],
+        emission_probability = config["emission_probability"]["A"][0]+","+config["emission_probability"]["A"][1]+","+config["emission_probability"]["A"][2]+"/"+config["emission_probability"]["B"][0]+","+config["emission_probability"]["B"][1]+","+config["emission_probability"]["B"][2]
     shell:
         """
-        touch {output.finish}
+        python scripts/optimize_recombination_parameter.py \
+            --populations {params.populations} \
+            --clones {params.clones} \
+            --out {output.plot} \
+            --cores {params.cores} \
+            --initial_p {params.initial_probability}\
+            --transition_p {params.transition_probability}\
+            --emission_p {params.emission_probability}
         """
+
+optimize = []
+if config["optimization_recombination_parameter"]["flag"]:
+    optimize.append(rules.optimize_recombination_parameter.output.plot)
 
 rule all:
     input:
         finish = rules.clones_processing.output.finish,
-        plot = rules.plot_multiple_clones.output.plot
+        plot = rules.plot_multiple_clones.output.plot,
+        optimization = optimize
     shell:
         """
         rm {input.finish}

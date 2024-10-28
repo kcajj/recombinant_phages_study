@@ -23,3 +23,7 @@ emission_probability:
 convolution_window: 500
 
 common_x_axis: 141194
+
+optimization_recombination_parameter:
+  flag: true
+  values: '0,00001,0.00005,0.0001,0.0005,0.001' #comma separated values
