@@ -86,11 +86,12 @@ if __name__ == "__main__":
     output_path = args.out
     cores = args.cores
     initial_probability = args.initial_p
-    transition_probabilities = [float(prob) for prob in args.transition_p.split(",")].sort()
+    transition_probabilities = [float(prob) for prob in args.transition_p.split(",")]
     emission_probability = args.emission_p
 
     initial_probability_matrix = build_matrix(initial_probability)
     emission_probability_matrix = build_matrix(emission_probability)
+    transition_probabilities.sort()
 
     log_liks = defaultdict(dict) #log likelihoods saved for each clone and population
     '''

@@ -5,9 +5,101 @@ from Bio import SeqIO
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from collections import defaultdict
+import pysam
 from array_compression import decompress_array, retrive_compressed_array_from_str, compress_array
 from coordinate_converter import create_coordinate_conversion_map
 
+def get_ancestral_alignment(bam_file):
+
+    ancestral_names = []
+    ancestral_alignments = []
+    ancestral_starts = []
+    ancestral_ends = []
+
+    with pysam.AlignmentFile(bam_file, "rb") as bam:
+        for ancestral in bam.fetch():
+            if not (ancestral.is_secondary):
+
+                ancestral_alignment = []
+
+                mapping_start = ancestral.reference_start
+                mapping_end = ancestral.reference_end
+
+                alignment_array = ancestral.get_aligned_pairs()
+
+                for ancestral_pos, clone_pos in alignment_array:
+                    if clone_pos != None:  # clips and gaps in the reference are not considered
+                        if ancestral_pos == None:
+                            ancestral_alignment.append(0)  # gap in the read
+                        else:
+                            ancestral_alignment.append(1)
+                
+                ancestral_names.append(ancestral.query_name)
+                ancestral_alignments.append(ancestral_alignment)
+                ancestral_starts.append(mapping_start)
+                ancestral_ends.append(mapping_end)
+    
+    return ancestral_names, ancestral_alignments, ancestral_starts, ancestral_ends
+
+
+def summarise_ancestral_alignments(
+    len_seq,
+    ancestral_names,
+    ancestral_alignments,
+    ancestral_starts,
+    ancestral_ends,
+    k,
+):
+    """
+    create an array that summarises the mapping of ancestral on hybrid
+    """
+
+    # create a dictionary with the ancestral names as keys (just one for each ancestral sequence) and the empy mismatch arrays as values,
+    distributions = defaultdict(None)
+    for i in range(len(ancestral_names)):
+        distributions[ancestral_names[i]] = np.zeros(len_seq)
+
+    # extract the mismatches of each ancestral sequence and normalise them
+    for name, array in distributions.items():
+        for i in range(len(ancestral_names)):
+            if ancestral_names[i] == name:
+                array = fill(array, ancestral_starts[i], ancestral_ends[i], ancestral_alignments[i])
+        # convolution and normalisation
+        #convolved_array = np.convolve(array, np.ones(k), "valid") / k
+
+        distributions[name] = array  # the distributions dictionary stores the normalised arrays
+
+    return distributions
+
+def plot_ancestral_line(
+    ancestral_line,
+    color,
+    ax,
+    offset,
+    interline,
+    thickness,
+):
+
+    # compress the array so that it is easy to create rectangles
+    plotting_array = compress_array(ancestral_line)
+
+    # plot the rectangles
+    height = thickness
+    y = offset-interline-thickness+1
+    c = 0
+    for lenn, typee in plotting_array:
+        
+        x = c
+        width = lenn
+        c += lenn
+
+        if typee == 0:
+            continue # don't plot gaps
+
+        rectangle = mpatches.Rectangle((x, y), width, height, color=color)
+        ax.add_patch(rectangle)
+    
+    return y
 
 def get_mismatch_arrays(mismatch_array_path):
     csv.field_size_limit(sys.maxsize)
@@ -108,6 +200,9 @@ def plot_mismatch_line(
     population,
     isolate,
     ax,
+    offset,
+    interline,
+    thickness,
 ):
 
     # create a colour array with 0=gray and from 1 onwards C0, C1, C2, C3 ecc
@@ -123,8 +218,8 @@ def plot_mismatch_line(
     plotting_array = compress_array(mismatch_line)
 
     # plot the rectangles
-    height = 1
-    y = -0.5
+    height = thickness
+    y = offset-interline-thickness+1
     c = 0
     for lenn, typee in plotting_array:
         
@@ -143,9 +238,9 @@ def plot_mismatch_line(
 
         rectangle = mpatches.Rectangle((x, y), width, height, color=colors["C" + str(typee)])
         ax.add_patch(rectangle)
+    return y
 
-    ax.set(xlim=(0, len(mismatch_line)), ylim=(-5, 5))
-    ax.set_title(f"{isolate} {population}")
+    #ax.set_title(f"{isolate} {population}")
     '''
     legend_elements = [mpatches.Patch(color="gray", label="no evidence")]
     c = 0
@@ -167,6 +262,7 @@ if __name__ == "__main__":
     parser.add_argument("--populations", help="population names")
     parser.add_argument("--clones", help="clone names")
     parser.add_argument("--hybrid_ref", help="hybrid reference")
+    parser.add_argument("--ancestral_alignment", help="alignment of ancestral sequences on hybridref")
     parser.add_argument("--k", help="convolution window")
     parser.add_argument("--out", help="output path of the plot")
 
@@ -174,12 +270,44 @@ if __name__ == "__main__":
     populations = args.populations.split(",")[:-1]
     clones = args.clones.split(",")[:-1]
     hybrid_ref_path = args.hybrid_ref
+    ancestral_alignment_path = args.ancestral_alignment
     k = int(args.k)
     output_path = args.out
 
-    n_plots = len(populations) * len(clones) + 2
-    plot_index = 2
-    fig, axs = plt.subplots(n_plots, 1, figsize=(18, 20), sharex=True)
+    hyb_len = get_len_seq(hybrid_ref_path)
+
+    #get alignments of ancestral sequences.
+    ancestral_names, ancestral_alignments, ancestral_starts, ancestral_ends = get_ancestral_alignment(ancestral_alignment_path)
+
+    ancestral_arrays = summarise_ancestral_alignments(
+        hyb_len,
+        ancestral_names,
+        ancestral_alignments,
+        ancestral_starts,
+        ancestral_ends,
+        k,)
+    
+    n_plots = len(populations) * len(clones) + len(ancestral_arrays.keys())
+    fig,ax = plt.subplots(figsize=(20, 10))
+
+    interline = 2
+    thickness = 1
+
+    offset = n_plots+(n_plots*(interline+thickness-1))
+    height = offset
+
+    colors=["C0", "C1"]
+    c = 0
+    for name, array in ancestral_arrays.items():
+        offset = plot_ancestral_line(
+            array,
+            colors[c],
+            ax,
+            offset,
+            interline,
+            thickness,
+        )
+        c += 1
 
     for population in populations:
         for clone in clones:
@@ -190,7 +318,6 @@ if __name__ == "__main__":
             clone_genome_path = f"data/clones_genomes/{population}/{population}_{clone}.fasta"
 
             clone_len = get_len_seq(clone_genome_path)
-            hyb_len = get_len_seq(hybrid_ref_path)
 
             ancestral_names, mismatch_arrays, mapping_starts, mapping_ends = get_mismatch_arrays(mismatch_array_path)
             # recombination_distribution = npz_extract(recombination_distribution_path)
@@ -223,16 +350,18 @@ if __name__ == "__main__":
                 converted_mismatch_line[gap_pos] = -1 #gap has value -1 in the mismatch line
 
             # plot function
-            plot_mismatch_line(
+            offset=plot_mismatch_line(
                 mismatch_distributions,
                 converted_mismatch_line,
                 population,
                 clone,
-                axs[plot_index],
+                ax,
+                offset,
+                interline,
+                thickness,
             )
 
-            plot_index += 1
-
     # legend
+    ax.set(xlim=(0, hyb_len), ylim=(0, height))
     fig.suptitle(f"Clones. (convolution window {k})")
     plt.savefig(output_path, bbox_inches="tight")

@@ -211,49 +211,6 @@ rule plot_references_coverage:
             --out {output.plots}
         """
 
-rule map_hybridref_to_clones:
-    input:
-        clone = clones,
-        hybrid = rules.hybrid_ref.output.hybrid_ref
-    output:
-        sam = 'results/alignments/hybridref_to_clones/{population}/{population}_{isolate}.sam',
-        bam = 'results/alignments/hybridref_to_clones/{population}/{population}_{isolate}.bam',
-        bai = 'results/alignments/hybridref_to_clones/{population}/{population}_{isolate}.bam.bai'
-    conda:
-        'conda_envs/read_mapping.yml'
-    shell:
-        """
-        minimap2 -a {input.clone} {input.hybrid} > {output.sam}
-        samtools sort {output.sam} > {output.bam}
-        samtools index {output.bam}
-        """
-
-#doesn't work, coordinates convertion creates problems
-rule plot_hmm_cuts:
-    input:
-        clone = clones,
-        mismatch = rules.mismatch_arrays.output.mismatch,
-        recombination = rules.genomewide_recombination_array.output.genomewide_recombination,
-        hc_alignment = rules.map_hybridref_to_clones.output.bam
-    output:
-        plots='results/plots/hmm_cuts/{population}_{isolate}.pdf',
-    conda:
-        'conda_envs/sci_py.yml'
-    params:
-        x_axis = config["common_x_axis"],
-        k = config["convolution_window"]
-    shell:
-        """
-        python scripts/plot_hmm_cuts.py \
-            --clone {input.clone} \
-            --mismatches {input.mismatch} \
-            --recombination {input.recombination} \
-            --hc_alignment {input.hc_alignment} \
-            --x_axis {params.x_axis} \
-            --k {params.k} \
-            --out {output.plots}
-        """
-
 rule clones_processing:
     input:
         mismatch_density_plots=expand(rules.plot_mismatch_density.output.plots, population=populations, isolate=isolates),
@@ -266,9 +223,27 @@ rule clones_processing:
         touch {output.finish}
         """
 
+rule map_ancestral_to_hybridref:
+    input:
+        ancestral = ancestral_phages,
+        hybrid = rules.hybrid_ref.output.hybrid_ref
+    output:
+        sam = 'results/alignments/ancestral_to_hybridref/ancestral_to_hybridref.sam',
+        bam = 'results/alignments/ancestral_to_hybridref/ancestral_to_hybridref.bam',
+        bai = 'results/alignments/ancestral_to_hybridref/ancestral_to_hybridref.bam.bai'
+    conda:
+        'conda_envs/read_mapping.yml'
+    shell:
+        """
+        minimap2 -a {input.hybrid} {input.ancestral} > {output.sam}
+        samtools sort {output.sam} > {output.bam}
+        samtools index {output.bam}
+        """
+
 rule plot_multiple_clones:
     input:
-        hybrid_ref = rules.hybrid_ref.output.hybrid_ref
+        hybrid_ref = rules.hybrid_ref.output.hybrid_ref,
+        ancestral_alignment = rules.map_ancestral_to_hybridref.output.bam,
     output:
         plot='results/plots/multiple_clones_plot.pdf',
     conda:
@@ -284,6 +259,7 @@ rule plot_multiple_clones:
             --populations {params.populations} \
             --clones {params.clones} \
             --hybrid_ref {input.hybrid_ref} \
+            --ancestral_alignment {input.ancestral_alignment} \
             --k {params.k} \
             --out {output.plot}
         """
