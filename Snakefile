@@ -1,13 +1,20 @@
-populations=["P1","P2","P3"]
-isolates=["C1","C2","C3","C4"]
+population_names=["P1","P2","P3"]
+clone_names=["C1","C2","C3","C4"]
+
 populations_string = ""
-for population in populations:
+for population in population_names:
     populations_string += population + ","
-isolates_string = ""
-for isolate in isolates:
-    isolates_string += isolate + ","
+clones_string = ""
+for clone in clone_names:
+    clones_string += clone + ","
 
 configfile: "config.yml"
+
+x_axis = config["plots"]["common_x_axis"]
+k = config["plots"]["convolution_window"]
+interline = config["plots"]["interline"]
+thickness = config["plots"]["thickness"]
+colors = config["plots"]["colors"]
 
 clones = 'data/clones_genomes/{population}/{population}_{isolate}.fasta'
 ancestral_phages = 'data/references.fasta'
@@ -54,8 +61,8 @@ rule plot_mismatch_density:
     conda:
         'conda_envs/sci_py.yml'
     params:
-        x_axis = config["common_x_axis"],
-        k = config["convolution_window"]
+        x_axis = x_axis,
+        k = k
     shell:
         """
         python scripts/plot_mismatch_density.py \
@@ -75,8 +82,8 @@ rule plot_mismatch_line:
     conda:
         'conda_envs/sci_py.yml'
     params:
-        x_axis = config["common_x_axis"],
-        k = config["convolution_window"]
+        x_axis = x_axis,
+        k = k
     shell:
         """
         python scripts/plot_mismatch_line.py \
@@ -213,9 +220,9 @@ rule plot_references_coverage:
 
 rule clones_processing:
     input:
-        mismatch_density_plots=expand(rules.plot_mismatch_density.output.plots, population=populations, isolate=isolates),
-        mismatch_line_plots=expand(rules.plot_mismatch_line.output.plots, population=populations, isolate=isolates),
-        coverage_plots=expand(rules.plot_references_coverage.output.plots, population=populations, isolate=isolates),
+        mismatch_density_plots=expand(rules.plot_mismatch_density.output.plots, population=population_names, isolate=clone_names),
+        mismatch_line_plots=expand(rules.plot_mismatch_line.output.plots, population=population_names, isolate=clone_names),
+        coverage_plots=expand(rules.plot_references_coverage.output.plots, population=population_names, isolate=clone_names),
     output:
         finish = 'results/all_clones_processed.txt'
     shell:
@@ -250,9 +257,11 @@ rule plot_multiple_clones:
         'conda_envs/sci_py.yml'
     params:
         populations = populations_string,
-        clones = isolates_string,
-        x_axis = config["common_x_axis"],
-        k = config["convolution_window"]
+        clones = clones_string,
+        k = k,
+        interline = interline,
+        thickness = thickness,
+        colors = colors
     shell:
         """
         python scripts/plot_multiple_clones.py \
@@ -261,6 +270,9 @@ rule plot_multiple_clones:
             --hybrid_ref {input.hybrid_ref} \
             --ancestral_alignment {input.ancestral_alignment} \
             --k {params.k} \
+            --interline {params.interline} \
+            --thickness {params.thickness} \
+            --colors {params.colors} \
             --out {output.plot}
         """
 
@@ -273,7 +285,7 @@ rule optimize_recombination_parameter:
         'conda_envs/sci_py.yml'
     params:
         populations = populations_string,
-        clones = isolates_string,
+        clones = clones_string,
         cores = config["cores"],
         initial_probability = config["initial_probability"]["A"]+","+config["initial_probability"]["B"],
         transition_probability = config["optimization_recombination_parameter"]["values"],

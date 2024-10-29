@@ -9,6 +9,32 @@ import pysam
 from array_compression import decompress_array, retrive_compressed_array_from_str, compress_array
 from coordinate_converter import create_coordinate_conversion_map
 
+
+def npz_extract(npz_file):
+    npz = np.load(npz_file)
+    lst = npz.files
+    for item in lst:
+        array = npz[item]
+    return array
+
+
+def get_len_seq(fasta_path):
+    with open(fasta_path, "r") as fasta_file:
+        for record in SeqIO.parse(fasta_file, "fasta"):
+            return int(len(record.seq))
+
+
+def fill(array, start, end, mismatch_array):
+    """
+    fill the array with the mismatch information starting from index "start"
+    """
+    for i in range(len(array)):
+        if i >= start and i <= end:
+            array[i] += mismatch_array[i - start]
+    # return array[:start]+mismatch_array+array[start+len(mismatch_array):]
+    return array
+
+
 def get_ancestral_alignment(bam_file):
 
     ancestral_names = []
@@ -33,12 +59,12 @@ def get_ancestral_alignment(bam_file):
                             ancestral_alignment.append(0)  # gap in the read
                         else:
                             ancestral_alignment.append(1)
-                
+
                 ancestral_names.append(ancestral.query_name)
                 ancestral_alignments.append(ancestral_alignment)
                 ancestral_starts.append(mapping_start)
                 ancestral_ends.append(mapping_end)
-    
+
     return ancestral_names, ancestral_alignments, ancestral_starts, ancestral_ends
 
 
@@ -63,10 +89,11 @@ def summarise_ancestral_alignments(
         for i in range(len(ancestral_names)):
             if ancestral_names[i] == name:
                 array = fill(array, ancestral_starts[i], ancestral_ends[i], ancestral_alignments[i])
- 
+
         distributions[name] = array  # the distributions dictionary stores the normalised arrays
 
     return distributions
+
 
 def plot_ancestral_line(
     ancestral_line,
@@ -82,21 +109,22 @@ def plot_ancestral_line(
 
     # plot the rectangles
     height = thickness
-    y = offset-interline-thickness
+    y = offset - interline - thickness
     c = 0
     for lenn, typee in plotting_array:
-        
+
         x = c
         width = lenn
         c += lenn
 
         if typee == 0:
-            continue # don't plot gaps
+            continue  # don't plot gaps
 
         rectangle = mpatches.Rectangle((x, y), width, height, color=color)
         ax.add_patch(rectangle)
-    
+
     return y
+
 
 def get_mismatch_arrays(mismatch_array_path):
     csv.field_size_limit(sys.maxsize)
@@ -123,31 +151,6 @@ def get_mismatch_arrays(mismatch_array_path):
             mapping_ends.append(mapping_end)
 
     return ancestral_names, mismatch_arrays, mapping_starts, mapping_ends
-
-
-def npz_extract(npz_file):
-    npz = np.load(npz_file)
-    lst = npz.files
-    for item in lst:
-        array = npz[item]
-    return array
-
-
-def get_len_seq(fasta_path):
-    with open(fasta_path, "r") as fasta_file:
-        for record in SeqIO.parse(fasta_file, "fasta"):
-            return int(len(record.seq))
-
-
-def fill(array, start, end, mismatch_array):
-    """
-    fill the array with the mismatch information starting from index "start"
-    """
-    for i in range(len(array)):
-        if i >= start and i <= end:
-            array[i] += mismatch_array[i - start]
-    # return array[:start]+mismatch_array+array[start+len(mismatch_array):]
-    return array
 
 
 def summarise_normalise_mismatch_arrays(
@@ -191,6 +194,7 @@ def summarise_normalise_mismatch_arrays(
 
     return distributions
 
+
 def plot_mismatch_line(
     distributions,
     mismatch_line,
@@ -200,32 +204,23 @@ def plot_mismatch_line(
     offset,
     interline,
     thickness,
+    colors,
 ):
-
-    # create a colour array with 0=gray and from 1 onwards C0, C1, C2, C3 ecc
-    colors = {"C0": "gray"}
-    c = 0
-    for distribution in distributions.keys():
-        # for each color CX with X>0 we assign the color names starting from C0
-        colors["C" + str(c + 1)] = "C" + str(c)
-        c += 1
-        # cycling through the lines in the same order as we did in the previous loop, to guarantee correct colours (if a line is first it gets c0)
-
     # compress the array so that it is easy to create rectangles
     plotting_array = compress_array(mismatch_line)
 
     # plot the rectangles
     height = thickness
-    y = offset-interline-thickness
-    c = 0
+    y = offset - interline - thickness
+    x_progress = 0
     for lenn, typee in plotting_array:
-        
-        x = c
+
+        x = x_progress
         width = lenn
-        c += lenn
+        x_progress += lenn
 
         if typee == -1:
-            continue # don't plot gaps
+            continue  # don't plot gaps
 
         # invert colors (we are using mimatch density, which is higher in the opposite phage)
         if typee == 1:
@@ -233,12 +228,12 @@ def plot_mismatch_line(
         elif typee == 2:
             typee = 1
 
-        rectangle = mpatches.Rectangle((x, y), width, height, color=colors["C" + str(typee)])
+        rectangle = mpatches.Rectangle((x, y), width, height, color=colors[typee])
         ax.add_patch(rectangle)
     return y
 
-    #ax.set_title(f"{isolate} {population}")
-    '''
+    # ax.set_title(f"{isolate} {population}")
+    """
     legend_elements = [mpatches.Patch(color="gray", label="no evidence")]
     c = 0
     for name in distributions.keys():  # again cycling in the same order
@@ -246,7 +241,8 @@ def plot_mismatch_line(
         c += 1
 
     ax.legend(handles=legend_elements)
-    '''
+    """
+
 
 if __name__ == "__main__":
 
@@ -261,6 +257,9 @@ if __name__ == "__main__":
     parser.add_argument("--hybrid_ref", help="hybrid reference")
     parser.add_argument("--ancestral_alignment", help="alignment of ancestral sequences on hybridref")
     parser.add_argument("--k", help="convolution window")
+    parser.add_argument("--interline", help="interline")
+    parser.add_argument("--thickness", help="thickness")
+    parser.add_argument("--colors", help="colors")
     parser.add_argument("--out", help="output path of the plot")
 
     args = parser.parse_args()
@@ -269,12 +268,18 @@ if __name__ == "__main__":
     hybrid_ref_path = args.hybrid_ref
     ancestral_alignment_path = args.ancestral_alignment
     k = int(args.k)
+    interline = int(args.interline)
+    thickness = int(args.thickness)
+    colors = args.colors.split(",")
+
     output_path = args.out
 
     hyb_len = get_len_seq(hybrid_ref_path)
 
-    #get alignments of ancestral sequences.
-    ancestral_names, ancestral_alignments, ancestral_starts, ancestral_ends = get_ancestral_alignment(ancestral_alignment_path)
+    # get alignments of ancestral sequences.
+    ancestral_names, ancestral_alignments, ancestral_starts, ancestral_ends = get_ancestral_alignment(
+        ancestral_alignment_path
+    )
 
     ancestral_arrays = summarise_ancestral_alignments(
         hyb_len,
@@ -282,19 +287,15 @@ if __name__ == "__main__":
         ancestral_alignments,
         ancestral_starts,
         ancestral_ends,
-        )
-    
+    )
+
     n_plots = len(populations) * len(clones) + len(ancestral_arrays.keys())
-    fig,ax = plt.subplots(figsize=(20, 10))
+    fig, ax = plt.subplots(figsize=(20, 10))
 
-    interline = 1
-    thickness = 1
+    offset = n_plots + (n_plots * (interline + thickness - 1))
+    y_lim = offset
 
-    offset = n_plots+(n_plots*(interline+thickness-1))
-    height = offset
-
-    colors=["C0", "C1"]
-    c = 0
+    c = 1  # take the colors from the second element
     for name, array in ancestral_arrays.items():
         offset = plot_ancestral_line(
             array,
@@ -328,7 +329,7 @@ if __name__ == "__main__":
             c = 0
             for name, array in mismatch_distributions.items():
                 # summarise the mismatch density of all phages
-                c += 1  # zero for no evidence, 1 for EM11, 2 for EM60 #this order is determined by the order of the lines in the dictionary
+                c += 1  # zero for no evidence, 1 for EM11, 2 for EM60 #this order is determined by the order of the lines in the dictionary!!!!!!!!!! which corresponds tot he order of references in the input file
                 for i in range(len(array)):
                     if array[i] == 1:
                         single_array_normalised_mismatches[i] = c
@@ -343,11 +344,11 @@ if __name__ == "__main__":
                 converted_mismatch_line[hyb_coord] = single_array_normalised_mismatches[clone_coord]
 
             # mask out the gaps of the clone on the hybrid reference
-            for gap_pos in conv_map['gaps']:
-                converted_mismatch_line[gap_pos] = -1 #gap has value -1 in the mismatch line
+            for gap_pos in conv_map["gaps"]:
+                converted_mismatch_line[gap_pos] = -1  # gap has value -1 in the mismatch line
 
             # plot function
-            offset=plot_mismatch_line(
+            offset = plot_mismatch_line(
                 mismatch_distributions,
                 converted_mismatch_line,
                 population,
@@ -356,9 +357,10 @@ if __name__ == "__main__":
                 offset,
                 interline,
                 thickness,
+                colors,
             )
 
     # legend
-    ax.set(xlim=(0, hyb_len), ylim=(0, height))
+    ax.set(xlim=(0, hyb_len), ylim=(0, y_lim))
     fig.suptitle(f"Clones. (convolution window {k})")
     plt.savefig(output_path, bbox_inches="tight")

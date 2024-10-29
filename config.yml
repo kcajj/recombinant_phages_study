@@ -20,10 +20,14 @@ emission_probability:
     1: "0.003"
     2: "0.03"
 
-convolution_window: 500
-
-common_x_axis: 141194
-
 optimization_recombination_parameter:
   flag: false
   values: '0.00001,0.00005,0.0001' #comma separated values
+
+plots:
+  convolution_window: 500
+  common_x_axis: 141194
+  interline: 1
+  thickness: 1
+  colors: 'gray,C0,C1' #comma separated colors. the first color is for no evidences,
+                       #the rest correspond to the references in the order given in the input file (references.fasta)
