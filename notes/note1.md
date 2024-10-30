@@ -40,15 +40,17 @@ We want to map on the clone genome the three references and see how the SNPs are
 
     d. inverting colors
 
-5. adding hmm cuts (needs the coordinate conversion between hybrid reference and clones)
+    e. plotting the clones aligned to the hybrid reference
+
+    f. show the hmm predictions.
 
 todo:
 
 clones:
-get longest between clones and refs
-all clones plot (expressed in hyb ref coordinates)
-optimize recombination parameter
+convolution window on ancestral alignment
+show hmm predictions
+remove hmm_cut
 
 reparameterization/parameterization system
-combination of two population plots
+combination of the two population plots
 optimize recombination parameter

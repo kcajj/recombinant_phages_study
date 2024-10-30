@@ -10,6 +10,7 @@ for clone in clone_names:
 
 configfile: "config.yml"
 
+hmm = config["hmm"]
 x_axis = config["plots"]["common_x_axis"]
 k = config["plots"]["convolution_window"]
 interline = config["plots"]["interline"]
@@ -166,10 +167,10 @@ rule prediction_arrays:
     conda:
         'conda_envs/sci_py.yml'
     params:
-        cores = config["cores"],
-        initial_probability = config["initial_probability"]["A"]+","+config["initial_probability"]["B"],
-        transition_probability = config["transition_probability"]["A"]["A"]+","+config["transition_probability"]["A"]["B"]+"/"+config["transition_probability"]["B"]["A"]+","+config["transition_probability"]["B"]["B"],
-        emission_probability = config["emission_probability"]["A"][0]+","+config["emission_probability"]["A"][1]+","+config["emission_probability"]["A"][2]+"/"+config["emission_probability"]["B"][0]+","+config["emission_probability"]["B"][1]+","+config["emission_probability"]["B"][2]
+        cores = hmm["cores"],
+        initial_probability = hmm["initial_probability"]["A"]+","+hmm["initial_probability"]["B"],
+        transition_probability = hmm["transition_probability"]["A"]["A"]+","+hmm["transition_probability"]["A"]["B"]+"/"+hmm["transition_probability"]["B"]["A"]+","+hmm["transition_probability"]["B"]["B"],
+        emission_probability = hmm["emission_probability"]["A"][0]+","+hmm["emission_probability"]["A"][1]+","+hmm["emission_probability"]["A"][2]+"/"+hmm["emission_probability"]["B"][0]+","+hmm["emission_probability"]["B"][1]+","+hmm["emission_probability"]["B"][2]
     shell:
         """
         python scripts/hmm_prediction_arrays.py \
@@ -249,6 +250,7 @@ rule map_ancestral_to_hybridref:
 
 rule plot_multiple_clones:
     input:
+        finish = rules.clones_processing.output.finish,
         hybrid_ref = rules.hybrid_ref.output.hybrid_ref,
         ancestral_alignment = rules.map_ancestral_to_hybridref.output.bam,
     output:
@@ -278,6 +280,7 @@ rule plot_multiple_clones:
 
 rule optimize_recombination_parameter:
     input:
+        finish = rules.clones_processing.output.finish,
         msa = rules.msa.output.msa
     output:
         plot = 'results/plots/parameter_optimization.pdf'
@@ -286,10 +289,10 @@ rule optimize_recombination_parameter:
     params:
         populations = populations_string,
         clones = clones_string,
-        cores = config["cores"],
-        initial_probability = config["initial_probability"]["A"]+","+config["initial_probability"]["B"],
+        cores = hmm["cores"],
+        initial_probability = hmm["initial_probability"]["A"]+","+hmm["initial_probability"]["B"],
         transition_probability = config["optimization_recombination_parameter"]["values"],
-        emission_probability = config["emission_probability"]["A"][0]+","+config["emission_probability"]["A"][1]+","+config["emission_probability"]["A"][2]+"/"+config["emission_probability"]["B"][0]+","+config["emission_probability"]["B"][1]+","+config["emission_probability"]["B"][2]
+        emission_probability = hmm["emission_probability"]["A"][0]+","+hmm["emission_probability"]["A"][1]+","+hmm["emission_probability"]["A"][2]+"/"+hmm["emission_probability"]["B"][0]+","+hmm["emission_probability"]["B"][1]+","+hmm["emission_probability"]["B"][2]
     shell:
         """
         python scripts/optimize_recombination_parameter.py \
