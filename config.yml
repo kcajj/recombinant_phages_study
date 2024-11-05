@@ -5,11 +5,11 @@ hmm:
     B: "0.5"
   transition_probability:
     A:
-      A: "0.99999"
-      B: "0.00001"
+      A: "0.9996"
+      B: "0.0004"
     B:
-      A: "0.00001"
-      B: "0.99999"
+      A: "0.0004"
+      B: "0.9996"
   emission_probability:
     A:
       0: "0.967"
@@ -21,7 +21,7 @@ hmm:
       2: "0.03"
 
 optimization_recombination_parameter:
-  flag: true
+  flag: false
   values: '0.00001,0.00005,0.0001' #comma separated values
 
 plots:

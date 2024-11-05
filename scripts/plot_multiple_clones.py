@@ -97,6 +97,7 @@ def summarise_ancestral_alignments(
 
 def plot_ancestral_line(
     ancestral_line,
+    ancestral_name,
     color,
     ax,
     offset,
@@ -111,6 +112,9 @@ def plot_ancestral_line(
     height = thickness
     y = offset - interline - thickness
     c = 0
+
+    ax.text(0, y+thickness, f'{ancestral_name}', fontsize=15)
+
     for lenn, typee in plotting_array:
 
         x = c
@@ -196,7 +200,6 @@ def summarise_normalise_mismatch_arrays(
 
 
 def plot_mismatch_line(
-    distributions,
     mismatch_line,
     population,
     isolate,
@@ -213,6 +216,9 @@ def plot_mismatch_line(
     height = thickness
     y = offset - interline - thickness
     x_progress = 0
+
+    ax.text(0, y+thickness, f'{population} {isolate}', fontsize=15)
+
     for lenn, typee in plotting_array:
 
         x = x_progress
@@ -230,18 +236,8 @@ def plot_mismatch_line(
 
         rectangle = mpatches.Rectangle((x, y), width, height, color=colors[typee])
         ax.add_patch(rectangle)
+
     return y
-
-    # ax.set_title(f"{isolate} {population}")
-    """
-    legend_elements = [mpatches.Patch(color="gray", label="no evidence")]
-    c = 0
-    for name in distributions.keys():  # again cycling in the same order
-        legend_elements.append(mpatches.Patch(color="C" + str(c), label=name))
-        c += 1
-
-    ax.legend(handles=legend_elements)
-    """
 
 
 if __name__ == "__main__":
@@ -292,13 +288,14 @@ if __name__ == "__main__":
     n_plots = len(populations) * len(clones) + len(ancestral_arrays.keys())
     fig, ax = plt.subplots(figsize=(20, 10))
 
-    offset = n_plots + (n_plots * (interline + thickness - 1))
+    offset = n_plots + (n_plots * (interline + thickness - 1)) + (interline*len(populations))
     y_lim = offset
 
     c = 1  # take the colors from the second element
-    for name, array in ancestral_arrays.items():
+    for ancestral_name, array in ancestral_arrays.items():
         offset = plot_ancestral_line(
             array,
+            ancestral_name,
             colors[c],
             ax,
             offset,
@@ -308,6 +305,7 @@ if __name__ == "__main__":
         c += 1
 
     for population in populations:
+        offset -= interline
         for clone in clones:
 
             mismatch_array_path = f"results/mismatch_arrays/{population}/{population}_{clone}.tsv"
@@ -349,7 +347,6 @@ if __name__ == "__main__":
 
             # plot function
             offset = plot_mismatch_line(
-                mismatch_distributions,
                 converted_mismatch_line,
                 population,
                 clone,
@@ -361,6 +358,7 @@ if __name__ == "__main__":
             )
 
     # legend
+    ax.axes.get_yaxis().set_visible(False)
     ax.set(xlim=(0, hyb_len), ylim=(0, y_lim))
-    fig.suptitle(f"Clones. (convolution window {k})")
+    fig.suptitle(f"Clones. (convolution window {k})", fontsize=20, fontweight='bold')
     plt.savefig(output_path, bbox_inches="tight")
