@@ -1,0 +1,22 @@
+EM11
+
+null_freq 0.9734472970962721
+a_freq 0.026137382239215263
+b_freq 0.000415320664512716
+
+mean time spent per read 0.06484154270607244
+total time 605.1764512062073
+total reads 9328scripts/chores/emission_parameters_estimation/emission_frequencies.txt
+reads used 9328
+
+EM60
+
+null_freq 0.9718037494358426
+a_freq 0.00048737856718912066
+b_freq 0.027708871996968323
+
+mean time spent per read 0.06397701493605427
+total time 860.9928205013275
+total reads 13455
+reads used 13453
+
