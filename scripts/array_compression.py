@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def compress_array(array):
     compressed_array = []
     previous = array[0]
@@ -27,3 +30,11 @@ def retrive_compressed_array_from_str(array_str):
         x, y = tuple_str.split(", ")
         compressed_array.append((int(x), int(y)))
     return compressed_array
+
+
+def npz_extract(npz_file):
+    npz = np.load(npz_file)
+    lst = npz.files
+    for item in lst:
+        array = npz[item]
+    return array

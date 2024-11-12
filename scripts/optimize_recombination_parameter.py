@@ -93,19 +93,20 @@ if __name__ == "__main__":
     emission_probability_matrix = build_matrix(emission_probability)
     transition_probabilities.sort()
 
-    log_liks = defaultdict(dict) #log likelihoods saved for each clone and population
-    '''
+    log_liks = defaultdict(dict)  # log likelihoods saved for each clone and population
+    """
     keys: probability of recombination
     values: keys: population_clone
             values: log likelihood
-    '''
+    """
     for population in populations:
         for clone in clones:
+
+            evidences_file = f"results/evidence_arrays/{population}/{population}_{clone}.tsv"
+
+            read_names, evidence_arrays, mapping_starts, mapping_ends, c_reads = get_evidence_arrays(evidences_file)
+
             for prob in transition_probabilities:
-
-                evidences_file = f"results/evidence_arrays/{population}/{population}_{clone}.tsv"
-
-                read_names, evidence_arrays, mapping_starts, mapping_ends, c_reads = get_evidence_arrays(evidences_file)
 
                 transition_probability_matrix = np.array([[1 - prob, prob], [prob, 1 - prob]])
 
@@ -119,24 +120,24 @@ if __name__ == "__main__":
                             repeat(initial_probability_matrix),
                         ),
                     )
-                
+
                 tot_log_lik = 0
                 for i in range(len(results)):
                     hmm_prediction = results[i][0]
                     log_lik = results[i][1]
                     tot_log_lik += log_lik
 
-                log_liks[prob][f'{population}_{clone}'] = tot_log_lik
-    
+                log_liks[prob][f"{population}_{clone}"] = tot_log_lik
+
     mean_log_liks = []
     for prob, samples in log_liks.items():
-        prob_mean=[]
+        prob_mean = []
         for sample, log_lik in samples.items():
             prob_mean.append(log_lik)
         mean_log_liks.append(np.mean(prob_mean))
 
     plt.plot(transition_probabilities, mean_log_liks)
-    plt.xlabel('Recombination probability')
-    plt.ylabel('log likelihood')
-    plt.title('Optimization of the recombination parameter by log likelihood maximisation')
-    plt.savefig(output_path, bbox_inches='tight')
+    plt.xlabel("Recombination probability")
+    plt.ylabel("log likelihood")
+    plt.title("Optimization of the recombination parameter by log likelihood maximisation")
+    plt.savefig(output_path, bbox_inches="tight")

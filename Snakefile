@@ -146,7 +146,6 @@ rule evidence_arrays:
         msa = rules.msa.output.msa
     output:
         evidences='results/evidence_arrays/{population}/{population}_{isolate}.tsv',
-        coverage='results/coverage_arrays/{population}/{population}_{isolate}.npz'
     conda:
         'conda_envs/sci_py.yml'
     shell:
@@ -155,15 +154,15 @@ rule evidence_arrays:
             --bam {input.bam} \
             --msa_refs {input.msa} \
             --evidences_out {output.evidences} \
-            --coverage_out {output.coverage}
         """
 
 rule prediction_arrays:
     input:
         evidences = rules.evidence_arrays.output.evidences,
-        msa = rules.msa.output.msa
+        hybrid_ref = rules.hybrid_ref.output.hybrid_ref
     output:
-        predictions='results/prediction_arrays/{population}/{population}_{isolate}.tsv'
+        predictions='results/prediction_arrays/{population}/{population}_{isolate}.tsv',
+        coverage='results/coverage_arrays/{population}/{population}_{isolate}.npz'
     conda:
         'conda_envs/sci_py.yml'
     params:
@@ -175,18 +174,20 @@ rule prediction_arrays:
         """
         python scripts/hmm_prediction_arrays.py \
             --evidences {input.evidences} \
-            --msa_refs {input.msa} \
-            --out {output.predictions} \
+            --hybrid_ref {input.hybrid_ref} \
+            --predictions_out {output.predictions} \
+            --coverage_out {output.coverage} \
             --cores {params.cores} \
             --initial_p {params.initial_probability}\
             --transition_p {params.transition_probability}\
             --emission_p {params.emission_probability}
         """
 
+#can be deleted
 rule genomewide_recombination_array:
     input:
         predictions = rules.prediction_arrays.output.predictions,
-        msa = rules.msa.output.msa
+        hybrid_ref = rules.hybrid_ref.output.hybrid_ref
     output:
         genomewide_recombination = 'results/genomewide_recombination/{population}/{isolate}.npz',
         genomewide_recombination_01 = 'results/genomewide_recombination/{population}/{isolate}_01.npz',
@@ -197,7 +198,7 @@ rule genomewide_recombination_array:
         """
         python scripts/genomewide_recombination.py \
             --predictions {input.predictions} \
-            --msa_refs {input.msa} \
+            --hybrid_ref {input.hybrid_ref} \
             --out {output.genomewide_recombination} \
             --out_01 {output.genomewide_recombination_01} \
             --out_10 {output.genomewide_recombination_10}
@@ -205,7 +206,7 @@ rule genomewide_recombination_array:
 
 rule plot_references_coverage:
     input:
-        predictions = rules.prediction_arrays.output.predictions,
+        coverage = rules.prediction_arrays.output.coverage,
         msa = rules.msa.output.msa
     output:
         plots='results/plots/references_coverage/{population}/{population}_{isolate}.pdf',
@@ -214,8 +215,8 @@ rule plot_references_coverage:
     shell:
         """
         python scripts/plot_references_coverage.py \
-            --predictions {input.predictions} \
             --msa_refs {input.msa} \
+            --coverage {input.coverage} \
             --out {output.plots}
         """
 

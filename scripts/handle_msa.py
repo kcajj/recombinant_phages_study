@@ -76,6 +76,11 @@ def length_msa(msa_path):
     return alignment.get_alignment_length()
 
 
+def length_seq(seq_path):
+    seq = SeqIO.read(seq_path, "fasta")
+    return len(seq.seq)
+
+
 def extract_references_names(msa_path):
     alignment = AlignIO.read(open(msa_path), "fasta")
     names = []

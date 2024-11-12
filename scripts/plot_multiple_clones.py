@@ -113,7 +113,7 @@ def plot_ancestral_line(
     y = offset - interline - thickness
     c = 0
 
-    ax.text(0, y+thickness, f'{ancestral_name}', fontsize=15)
+    ax.text(0, y + thickness, f"{ancestral_name}", fontsize=15)
 
     for lenn, typee in plotting_array:
 
@@ -217,7 +217,7 @@ def plot_mismatch_line(
     y = offset - interline - thickness
     x_progress = 0
 
-    ax.text(0, y+thickness, f'{population} {isolate}', fontsize=15)
+    ax.text(0, y + thickness, f"{population} {isolate}", fontsize=15)
 
     for lenn, typee in plotting_array:
 
@@ -267,7 +267,6 @@ if __name__ == "__main__":
     interline = int(args.interline)
     thickness = int(args.thickness)
     colors = args.colors.split(",")
-
     output_path = args.out
 
     hyb_len = get_len_seq(hybrid_ref_path)
@@ -288,7 +287,7 @@ if __name__ == "__main__":
     n_plots = len(populations) * len(clones) + len(ancestral_arrays.keys())
     fig, ax = plt.subplots(figsize=(20, 10))
 
-    offset = n_plots + (n_plots * (interline + thickness - 1)) + (interline*len(populations))
+    offset = n_plots + (n_plots * (interline + thickness - 1)) + (interline * len(populations))
     y_lim = offset
 
     c = 1  # take the colors from the second element
@@ -360,5 +359,5 @@ if __name__ == "__main__":
     # legend
     ax.axes.get_yaxis().set_visible(False)
     ax.set(xlim=(0, hyb_len), ylim=(0, y_lim))
-    fig.suptitle(f"Clones. (convolution window {k})", fontsize=20, fontweight='bold')
+    fig.suptitle(f"Clones. (convolution window {k})", fontsize=20, fontweight="bold")
     plt.savefig(output_path, bbox_inches="tight")

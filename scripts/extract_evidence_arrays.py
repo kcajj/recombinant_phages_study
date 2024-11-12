@@ -7,9 +7,7 @@ from array_compression import compress_array
 import matplotlib.pyplot as plt
 
 
-def write_evidence_arrays(bam_file, refs_msa_path, output_evidences_path, output_coverage_path):
-
-    coverage = np.zeros(length_msa(refs_msa_path), dtype=int)
+def write_evidence_arrays(bam_file, refs_msa_path, output_evidences_path):
 
     time_spent_per_read = []
     tot_time_start = time.time()
@@ -37,10 +35,6 @@ def write_evidence_arrays(bam_file, refs_msa_path, output_evidences_path, output
                                 read_msa_seq += "-"  # gap in the read
                             else:
                                 read_msa_seq += read_seq[read_pos].lower()
-
-                            # update coverage
-                            coverage[ref_pos] += 1
-                            # we consider also the gaps since they are considered as no-evidence in the subsequent steps
 
                     msa_matrix = add_to_msa(refs_msa_path, read_msa_seq, mapping_start, mapping_end)
 
@@ -84,9 +78,6 @@ def write_evidence_arrays(bam_file, refs_msa_path, output_evidences_path, output
 
                 c_tot_alignments += 1
 
-            # save coverage
-            np.savez(output_coverage_path, coverage)
-
     output_stats_path = output_evidences_path[:-4] + "_stats.txt"
     with open(output_stats_path, "w") as f:
         f.write("evidence arrays extraction run of " + bam_file + "\n")
@@ -107,12 +98,10 @@ if __name__ == "__main__":
     parser.add_argument("--bam", help="path of the bam file")
     parser.add_argument("--msa_refs", help="path of the msa between the references")
     parser.add_argument("--evidences_out", help="output path of the .tsv file containing the evidence arrays")
-    parser.add_argument("--coverage_out", help="output path of the .npz file containing the coverage array")
 
     args = parser.parse_args()
     bam_file = args.bam
     refs_msa_path = args.msa_refs
     output_evidences_path = args.evidences_out
-    output_coverage_path = args.coverage_out
 
-    write_evidence_arrays(bam_file, refs_msa_path, output_evidences_path, output_coverage_path)
+    write_evidence_arrays(bam_file, refs_msa_path, output_evidences_path)
