@@ -3,6 +3,8 @@ results/
 .snakemake/
 log/
 tmp/
+alignments/
+pure_reads/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
