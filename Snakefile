@@ -282,7 +282,6 @@ rule plot_multiple_clones:
 rule optimize_recombination_parameter:
     input:
         finish = rules.clones_processing.output.finish,
-        msa = rules.msa.output.msa
     output:
         plot = 'results/plots/parameter_optimization.pdf'
     conda:
