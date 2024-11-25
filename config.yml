@@ -5,11 +5,11 @@ hmm:
     B: "0.5"
   transition_probability:
     A:
-      A: "0.9996"
-      B: "0.0004"
+      A: "0.99996"
+      B: "0.00004"
     B:
-      A: "0.0004"
-      B: "0.9996"
+      A: "0.00004"
+      B: "0.99996"
   emission_probability:
     A:
       0: "0.972"
@@ -21,8 +21,8 @@ hmm:
       2: "0.027"
 
 optimization_recombination_parameter:
-  flag: false
-  values: '0.00001,0.00005,0.0001' #comma separated values
+  flag: true
+  values: '0.00001,0.00002,0.00003,0.00004,0.00005,0.00006,0.00008,0.0001' #comma separated values
 
 plots:
   convolution_window: 500

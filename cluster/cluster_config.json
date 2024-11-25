@@ -16,5 +16,11 @@
         "qos": "6hours",
         "n": 20,
         "mem": "20G"
+    },
+    "optimize_recombination_parameter": {
+        "time": "05:59:00",
+        "qos": "6hours",
+        "n": 20,
+        "mem": "20G"
     }
 }
