@@ -96,8 +96,8 @@ def plot_mismatch_rectangles(
         plt.plot(convolved_mismatch_array, label=name, alpha=0.5, color=phage_colors[name])
 
     plt.legend()
-    plt.title(f"Mutation density distribution of {isolate} {population}, with convolution window of {k}")
-    plt.ylabel("mutation density")
+    plt.title(f"Mutations + gaps distribution of {isolate} {population}, with convolution window of {k}")
+    plt.ylabel("mutations + gaps density")
     plt.xlabel("bp")
     plt.xlim(0, x_axis)
     fig.savefig(out_folder, bbox_inches="tight")

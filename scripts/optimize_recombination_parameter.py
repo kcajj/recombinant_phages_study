@@ -73,7 +73,6 @@ if __name__ == "__main__":
     )
     parser.add_argument("--populations", help="population names")
     parser.add_argument("--clones", help="clone names")
-    parser.add_argument("--msa_refs", help="path of the msa between the references")
     parser.add_argument("--out", help="output path of the plot with the optimization")
     parser.add_argument("--cores", help="number of cores to use", type=int)
     parser.add_argument("--initial_p", help="initial probabilities of the HMM states")
