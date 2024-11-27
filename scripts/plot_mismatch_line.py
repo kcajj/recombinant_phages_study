@@ -166,6 +166,7 @@ if __name__ == "__main__":
     parser.add_argument("--mismatches", help="path of the mismatch array")
     parser.add_argument("--x_axis", help="length of the x axis")
     parser.add_argument("--k", help="convolution window")
+    parser.add_argument("--mismatch_threshold", help="threshold for the normalized mismatch density")
     parser.add_argument("--out", help="output path of the plot")
 
     args = parser.parse_args()
@@ -173,6 +174,7 @@ if __name__ == "__main__":
     mismatch_array_path = args.mismatches
     x_axis = int(args.x_axis)
     k = int(args.k)
+    mismatch_threshold = float(args.mismatch_threshold)
     output_path = args.out
 
     # set some estetic parameters for the plots
@@ -198,7 +200,7 @@ if __name__ == "__main__":
         # summarise the mismatch density of all phages
         c += 1  # zero for no evidence, 1 for EM11, 2 for EM60 #this order is determined by the order of the lines in the dictionary
         for i in range(len(array)):
-            if array[i] == 1:
+            if array[i] >= mismatch_threshold:
                 single_array_normalised_mismatches[i] = c
 
     plot_mismatch_line(

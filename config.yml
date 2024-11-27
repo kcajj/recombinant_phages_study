@@ -21,11 +21,12 @@ hmm:
       2: "0.027"
 
 optimization_recombination_parameter:
-  flag: true
+  flag: false
   values: '0.00001,0.00002,0.00003,0.00004,0.00005,0.00006,0.00008,0.0001' #comma separated values
 
 plots:
-  convolution_window: 500
+  convolution_window: 250
+  mismatch_threshold: 0.6
   common_x_axis: 141194
   interline: 1
   thickness: 1

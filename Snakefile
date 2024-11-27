@@ -13,6 +13,7 @@ configfile: "config.yml"
 hmm = config["hmm"]
 x_axis = config["plots"]["common_x_axis"]
 k = config["plots"]["convolution_window"]
+mismatch_threshold = config["plots"]["mismatch_threshold"]
 interline = config["plots"]["interline"]
 thickness = config["plots"]["thickness"]
 colors = config["plots"]["colors"]
@@ -84,7 +85,8 @@ rule plot_mismatch_line:
         'conda_envs/sci_py.yml'
     params:
         x_axis = x_axis,
-        k = k
+        k = k,
+        mismatch_threshold = mismatch_threshold,
     shell:
         """
         python scripts/plot_mismatch_line.py \
@@ -92,6 +94,7 @@ rule plot_mismatch_line:
             --mismatches {input.mismatch} \
             --x_axis {params.x_axis} \
             --k {params.k} \
+            --mismatch_threshold {params.mismatch_threshold} \
             --out {output.plots}
         """
 
@@ -262,6 +265,7 @@ rule plot_multiple_clones:
         populations = populations_string,
         clones = clones_string,
         k = k,
+        mismatch_threshold = mismatch_threshold,
         interline = interline,
         thickness = thickness,
         colors = colors
@@ -273,6 +277,7 @@ rule plot_multiple_clones:
             --hybrid_ref {input.hybrid_ref} \
             --ancestral_alignment {input.ancestral_alignment} \
             --k {params.k} \
+            --mismatch_threshold {params.mismatch_threshold} \
             --interline {params.interline} \
             --thickness {params.thickness} \
             --colors {params.colors} \

@@ -253,6 +253,7 @@ if __name__ == "__main__":
     parser.add_argument("--hybrid_ref", help="hybrid reference")
     parser.add_argument("--ancestral_alignment", help="alignment of ancestral sequences on hybridref")
     parser.add_argument("--k", help="convolution window")
+    parser.add_argument("--mismatch_threshold", help="threshold at which normalized mismatch distribution is attributed to an ancestral reference")
     parser.add_argument("--interline", help="interline")
     parser.add_argument("--thickness", help="thickness")
     parser.add_argument("--colors", help="colors")
@@ -264,6 +265,7 @@ if __name__ == "__main__":
     hybrid_ref_path = args.hybrid_ref
     ancestral_alignment_path = args.ancestral_alignment
     k = int(args.k)
+    mismatch_threshold = float(args.mismatch_threshold)
     interline = int(args.interline)
     thickness = int(args.thickness)
     colors = args.colors.split(",")
@@ -328,7 +330,7 @@ if __name__ == "__main__":
                 # summarise the mismatch density of all phages
                 c += 1  # zero for no evidence, 1 for EM11, 2 for EM60 #this order is determined by the order of the lines in the dictionary!!!!!!!!!! which corresponds tot he order of references in the input file
                 for i in range(len(array)):
-                    if array[i] == 1:
+                    if array[i] >= mismatch_threshold:
                         single_array_normalised_mismatches[i] = c
 
             # convert to the hybrid reference coordinates
@@ -359,5 +361,5 @@ if __name__ == "__main__":
     # legend
     ax.axes.get_yaxis().set_visible(False)
     ax.set(xlim=(0, hyb_len), ylim=(0, y_lim))
-    fig.suptitle(f"Clones. (convolution window {k})", fontsize=20, fontweight="bold")
+    fig.suptitle(f"Clones. (convolution window {k}, mismatch threshold {mismatch_threshold})", fontsize=20, fontweight="bold")
     plt.savefig(output_path, bbox_inches="tight")
