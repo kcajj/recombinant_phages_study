@@ -186,27 +186,6 @@ rule prediction_arrays:
             --emission_p {params.emission_probability}
         """
 
-#can be deleted
-rule genomewide_recombination_array:
-    input:
-        predictions = rules.prediction_arrays.output.predictions,
-        hybrid_ref = rules.hybrid_ref.output.hybrid_ref
-    output:
-        genomewide_recombination = 'results/genomewide_recombination/{population}/{isolate}.npz',
-        genomewide_recombination_01 = 'results/genomewide_recombination/{population}/{isolate}_01.npz',
-        genomewide_recombination_10 = 'results/genomewide_recombination/{population}/{isolate}_10.npz'
-    conda:
-        'conda_envs/sci_py.yml'
-    shell:
-        """
-        python scripts/genomewide_recombination.py \
-            --predictions {input.predictions} \
-            --hybrid_ref {input.hybrid_ref} \
-            --out {output.genomewide_recombination} \
-            --out_01 {output.genomewide_recombination_01} \
-            --out_10 {output.genomewide_recombination_10}
-        """
-
 rule plot_references_coverage:
     input:
         coverage = rules.prediction_arrays.output.coverage,

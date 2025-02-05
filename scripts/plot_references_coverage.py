@@ -10,25 +10,7 @@ from array_compression import npz_extract
 
 def plot_references_coverage(array1, array2, output_path, title, x_label, y_label, refs_msa_path, population):
 
-    ### temporary: adding the evidence arrays to the plot
-    evidences_file = f"results/evidence_arrays/{population}/{id}.tsv"
-    read_names, evidence_arrays, mapping_starts, mapping_ends, c_reads = get_evidence_arrays(evidences_file)
-    evidences_to_plot = []
-    x = []
-    for i in range(len(read_names)):
-        if read_names[i] == "P1_C1":
-            for pos, val in enumerate(evidence_arrays[i]):
-                if val != 0:
-                    x.append(pos + mapping_starts[i])
-                if val == 1:
-                    evidences_to_plot.append("blue")
-                elif val == 2:
-                    evidences_to_plot.append("orange")
-    y = [1] * len(x)
-    ###
-
     plt.figure(figsize=(20, 5))
-    plt.scatter(x, y, marker="|", c=evidences_to_plot, alpha=0.3)
     plt.plot(array1, alpha=0.5)
     plt.plot(array2, alpha=0.5)
     plt.title(title)

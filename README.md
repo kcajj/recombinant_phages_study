@@ -2,9 +2,13 @@
 
 This repository contains a pipeline used to analyse recombinant phage clones.
 
-More information @ [notes](notes/note1.md)
+The plots generated are described [here](documentation/plots.md).
+
+All the steps of the pipeline and the functioning of the scripts are described [here](documentation/scripts.md).
 
 # Configuration
+
+The [config.yml](/config.yml) file contains all the parameters of the pipeline:
 
 - HMM: set the cores available for the HMM algorithm and the parameters of the HMM model used to create the plots
 
@@ -16,7 +20,20 @@ More information @ [notes](notes/note1.md)
     - interline: space in between lines representing clone genomes
     - thickness: thickness of the line representing the clone genome
     - colors:
-    
+
+## Input folder
+
+The input folder should have the following structure:
+
+<pre>
+data/
+    clones_genomes/
+        [population_code]/
+            [population_code]_[clone_id].fasta
+            ...
+    references.fasta
+</pre>
+
 # Running the pipeline
 
 ## Local execution
